@@ -17,12 +17,17 @@
 import Foundation
 import Logging
 
+enum UTMDownloadTaskResult {
+    case virtualMachine(any UTMVirtualMachine)
+    case file(URL)
+}
+
 /// Downloads a file and creates a pending VM placeholder.
 class UTMDownloadTask: NSObject, URLSessionDelegate, URLSessionDownloadDelegate {
     let url: URL
     let name: String
-    private var downloadTask: Task<(any UTMVirtualMachine)?, Error>!
-    private var taskContinuation: CheckedContinuation<(any UTMVirtualMachine)?, Error>?
+    private var downloadTask: Task<UTMDownloadTaskResult?, Error>!
+    private var taskContinuation: CheckedContinuation<UTMDownloadTaskResult?, Error>?
     @MainActor private(set) lazy var pendingVM: UTMPendingVirtualMachine = createPendingVM()
     
     private let kMaxRetries = 5
@@ -52,8 +57,8 @@ class UTMDownloadTask: NSObject, URLSessionDelegate, URLSessionDownloadDelegate 
     /// Called by subclass when download is completed
     /// - Parameter location: Downloaded file location
     /// - Parameter response: URL response of the download
-    /// - Returns: Processed UTM virtual machine
-    func processCompletedDownload(at location: URL, response: URLResponse?) async throws -> any UTMVirtualMachine {
+    /// - Returns: Processed download result
+    func processCompletedDownload(at location: URL, response: URLResponse?) async throws -> UTMDownloadTaskResult {
         throw "Not Implemented"
     }
     
@@ -160,7 +165,7 @@ class UTMDownloadTask: NSObject, URLSessionDelegate, URLSessionDownloadDelegate 
     
     /// Starts the download
     /// - Returns: Completed download or nil if canceled
-    func download() async throws -> (any UTMVirtualMachine)? {
+    func download() async throws -> UTMDownloadTaskResult? {
         /// begin the download
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         downloadTask = Task.detached { [self] in

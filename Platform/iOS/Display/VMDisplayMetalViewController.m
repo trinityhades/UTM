@@ -138,6 +138,7 @@ static const NSInteger kResizeTimeoutSecs = 5;
 #if !TARGET_OS_VISION
     [self stopGCMouse];
 #endif
+    self.view.window.indirectPointerTouchIgnoredView = nil;
     [self.vmDisplay removeRenderer:self.renderer];
     [self removeObserver:self forKeyPath:@"vmDisplay.displaySize"];
 }
@@ -185,6 +186,7 @@ static const NSInteger kResizeTimeoutSecs = 5;
     [super enterSuspendedWithIsBusy:busy];
     self.prefersPointerLocked = NO;
     self.view.window.isIndirectPointerTouchIgnored = NO;
+    self.view.window.indirectPointerTouchIgnoredView = nil;
     if (!busy) {
         if (self.delegate.qemuHasClipboardSharing) {
             [[UTMPasteboard generalPasteboard] releasePollingModeForObject:self];
@@ -196,6 +198,7 @@ static const NSInteger kResizeTimeoutSecs = 5;
     [super enterLive];
     self.prefersPointerLocked = YES;
     self.view.window.isIndirectPointerTouchIgnored = YES;
+    self.view.window.indirectPointerTouchIgnoredView = self.mtkView;
     if (self.delegate.qemuDisplayIsDynamicResolution && self.isDynamicResolutionSupported) {
         [self requestResolutionChangeToSize:self.view.bounds.size];
     }

@@ -170,6 +170,7 @@ final class UTMQemuVirtualMachine: UTMSpiceVirtualMachine {
     @MainActor required init(packageUrl: URL, configuration: UTMQemuConfiguration, isShortcut: Bool = false) throws {
         self.isScopedAccess = packageUrl.startAccessingSecurityScopedResource()
         // load configuration
+        configuration.ensureBuiltinSerial()
         self.config = configuration
         self.pathUrl = packageUrl
         self.isShortcut = isShortcut
@@ -189,6 +190,7 @@ final class UTMQemuVirtualMachine: UTMSpiceVirtualMachine {
         guard let qemuConfig = try UTMQemuConfiguration.load(from: packageUrl) as? UTMQemuConfiguration else {
             throw UTMConfigurationError.invalidBackend
         }
+        qemuConfig.ensureBuiltinSerial()
         config = qemuConfig
         pathUrl = packageUrl
         updateConfigFromRegistry()

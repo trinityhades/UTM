@@ -117,12 +117,21 @@ struct VMWizardStartView: View {
                 #endif
                 #if os(tvOS)
                 Button {
-                    data.alertItem = .message("To download prebuilt VMs, visit this URL on another device:\nhttps://mac.getutm.app/gallery/")
+                    data.promptDownloadURL()
                 } label: {
                     Label {
-                        Text("Download prebuilt from UTM Gallery…")
+                        Text("Download from URL…")
                     } icon: {
                         Image(systemName: "arrow.down.doc")
+                    }
+                }
+                Button {
+                    data.downloadDefaultGalleryVM()
+                } label: {
+                    Label {
+                        Text("Download Ubuntu 14.04 directly…")
+                    } icon: {
+                        Image(systemName: "arrow.down.circle")
                     }
                 }
                 #else

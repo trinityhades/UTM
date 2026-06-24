@@ -89,7 +89,7 @@ public extension VMDisplayViewController {
 public extension VMDisplayViewController {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
-            if touch.type == .direct {
+            if touch.type == .direct || touch.type == .indirect || touch.type == .indirectPointer {
                 delegate.displayDidAssertUserInteraction()
                 break
             }

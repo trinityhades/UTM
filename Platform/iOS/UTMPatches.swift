@@ -107,6 +107,7 @@ extension UIPress {
 }
 
 private var IndirectPointerTouchIgnoredHandle: Int = 0
+private var IndirectPointerTouchIgnoredViewHandle: Int = 0
 
 /// Patch to allow ignoring indirect touch when capturing pointer
 extension UIWindow {
@@ -122,6 +123,17 @@ extension UIWindow {
             return number?.boolValue ?? false
         }
     }
+
+    /// If set, only indirect touch events targeting this view hierarchy are ignored.
+    @objc var indirectPointerTouchIgnoredView: UIView? {
+        set {
+            objc_setAssociatedObject(self, &IndirectPointerTouchIgnoredViewHandle, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+
+        get {
+            objc_getAssociatedObject(self, &IndirectPointerTouchIgnoredViewHandle) as? UIView
+        }
+    }
     
     /// Replacement `sendEvent(_:)` function
     /// - Parameter event: The event to dispatch.
@@ -129,6 +141,12 @@ extension UIWindow {
         if isIndirectPointerTouchIgnored && event.type == .touches {
             event.touches(for: self)?.forEach { touch in
                 if touch.type == .indirectPointer {
+                    if let ignoredView = indirectPointerTouchIgnoredView {
+                        let location = touch.location(in: self)
+                        guard hitTest(location, with: event)?.isDescendant(of: ignoredView) ?? false else {
+                            return
+                        }
+                    }
                     // for some reason, if we just ignore the event, future touch events get messed up
                     // so as an alternative, we still pass the event through but with a modified coordinate
                     touch.perform(Selector(("_setLocationInWindow:resetPrevious:")),

@@ -19,29 +19,41 @@ import SwiftUI
 struct VMWizardView: View {
     @StateObject var wizardState = VMWizardState()
     @Environment(\.presentationMode) private var presentationMode: Binding<PresentationMode>
+    @EnvironmentObject private var data: UTMData
     
     var body: some View {
-        if #available(iOS 16, visionOS 1.0, *) {
-            WizardNavigationView(wizardState: wizardState) {
-                presentationMode.wrappedValue.dismiss()
-            }
-            #if os(tvOS)
-            .frame(width: 1200, height: 900)
-            #endif
-        } else {
-            NavigationView {
-                WizardWrapper(page: .start, wizardState: wizardState) {
+        Group {
+            if #available(iOS 16, visionOS 1.0, *) {
+                WizardNavigationView(wizardState: wizardState) {
                     presentationMode.wrappedValue.dismiss()
                 }
+                #if os(tvOS)
+                .frame(width: 1200, height: 900)
+                #endif
+            } else {
+                NavigationView {
+                    WizardWrapper(page: .start, wizardState: wizardState) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+                .navigationViewStyle(.stack)
+                .alert(item: $wizardState.alertMessage) { msg in
+                    Alert(title: Text(msg.message))
+                }
+                #if os(tvOS)
+                .frame(width: 1200, height: 900)
+                #endif
             }
-            .navigationViewStyle(.stack)
-            .alert(item: $wizardState.alertMessage) { msg in
-                Alert(title: Text(msg.message))
-            }
-            #if os(tvOS)
-            .frame(width: 1200, height: 900)
-            #endif
         }
+        .onAppear(perform: preparePendingBootImage)
+    }
+
+    private func preparePendingBootImage() {
+        guard let url = data.pendingBootImageURL else {
+            return
+        }
+        data.pendingBootImageURL = nil
+        wizardState.prepareForDownloadedBootImage(url)
     }
 }
 

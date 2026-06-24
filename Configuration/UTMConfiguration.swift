@@ -125,7 +125,9 @@ extension UTMConfiguration {
             return UTMQemuConfiguration(migrating: legacy)
         } else if stub.backend == .qemu {
             // QEMU configuration
-            return try decoder.decode(UTMQemuConfiguration.self, from: configData)
+            let config = try decoder.decode(UTMQemuConfiguration.self, from: configData)
+            config.ensureBuiltinSerial()
+            return config
         } else if stub.backend == .apple {
             // Apple configuration
             #if os(macOS)

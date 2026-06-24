@@ -311,6 +311,16 @@ struct AlertMessage: Identifiable {
             nextPageBinding = .constant(nil)
         }
     }
+
+    func prepareForDownloadedBootImage(_ url: URL) {
+        useVirtualization = false
+        useAppleVirtualization = false
+        operatingSystem = .Linux
+        isGuestToolsInstallRequested = false
+        bootDevice = .cd
+        bootImageURL = url
+        pageHistory = [.operatingSystem, .hardware, .linuxBoot]
+    }
     
     func back() {
         slide = slideOut

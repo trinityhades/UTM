@@ -18,6 +18,7 @@ import SwiftUI
 
 struct BusyOverlay: View {
     @EnvironmentObject private var data: UTMData
+    @State private var downloadURLString: String = ""
     
     var body: some View {
         Group {
@@ -39,6 +40,25 @@ struct BusyOverlay: View {
                 return Alert(title: Text(message))
             }
         }
+        #if os(tvOS)
+        .alert("Download from URL", isPresented: $data.showDownloadURLPrompt) {
+            TextField("URL", text: $downloadURLString)
+            Button("Cancel", role: .cancel) {
+                downloadURLString = ""
+            }
+            Button("Download") {
+                guard let url = URL(string: downloadURLString.trimmingCharacters(in: .whitespacesAndNewlines)),
+                      ["http", "https"].contains(url.scheme?.lowercased()) else {
+                    data.showErrorAlert(message: NSLocalizedString("Please enter a valid HTTP or HTTPS URL.", comment: "BusyOverlay"))
+                    return
+                }
+                data.downloadWebImport(from: url)
+                downloadURLString = ""
+            }
+        } message: {
+            Text("Enter a direct URL to a UTM ZIP, ISO, or boot image.")
+        }
+        #endif
     }
 }
 

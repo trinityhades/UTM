@@ -23,6 +23,25 @@
 
 @implementation VMDisplayMetalViewController (Keyboard)
 
+- (NSArray<UIKeyCommand *> *)keyCommands {
+    UIKeyCommand *switchDisplay = [UIKeyCommand keyCommandWithInput:@"d"
+                                                      modifierFlags:UIKeyModifierCommand | UIKeyModifierControl
+                                                             action:@selector(keyCommandSwitchDisplay:)
+                                               discoverabilityTitle:NSLocalizedString(@"Switch Display", comment: "VMDisplayMetalViewController")];
+    NSArray<UIKeyCommand *> *superCommands = [super keyCommands];
+    if (superCommands) {
+        return [superCommands arrayByAddingObject:switchDisplay];
+    } else {
+        return @[switchDisplay];
+    }
+}
+
+- (void)keyCommandSwitchDisplay:(UIKeyCommand *)sender {
+    if ([self.delegate respondsToSelector:@selector(displayRequestSwitchDisplay)]) {
+        [self.delegate displayRequestSwitchDisplay];
+    }
+}
+
 #pragma mark - Software Keyboard
 
 - (BOOL)inputViewIsFirstResponder {

@@ -242,6 +242,13 @@ extension UTMQemuConfigurationError: LocalizedError {
 // MARK: - Defaults
 
 extension UTMQemuConfiguration {
+    func ensureBuiltinSerial() {
+        guard _serials.isEmpty else {
+            return
+        }
+        _serials = [UTMQemuConfigurationSerial()]
+    }
+
     private func reset(all: Bool = true) {
         if all {
             _information = .init()
@@ -265,9 +272,8 @@ extension UTMQemuConfiguration {
         system.cpu = architecture.cpuType.default
         if let display = UTMQemuConfigurationDisplay(forArchitecture: architecture, target: target) {
             displays = [display]
-        } else {
-            serials = [UTMQemuConfigurationSerial()]
         }
+        ensureBuiltinSerial()
         if let network = UTMQemuConfigurationNetwork(forArchitecture: architecture, target: target) {
             networks = [network]
         }
@@ -305,6 +311,7 @@ extension UTMQemuConfiguration {
         if let __sound = UTMQemuConfigurationSound(migrating: oldConfig) {
             _sound = [__sound]
         }
+        ensureBuiltinSerial()
     }
 }
 

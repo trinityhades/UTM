@@ -54,6 +54,7 @@ enum AlertItem: Identifiable {
 }
 
 @MainActor class UTMData: ObservableObject {
+    nonisolated static let defaultGalleryDownloadUrl = URL(string: "https://github.com/utmapp/vm-downloads/releases/download/debian-11.5/debian-11.5-xfce-arm64-utm4.zip")!
     
     /// Sandbox location for storing .utm bundles
     nonisolated static var defaultStorageUrl: URL {
@@ -69,6 +70,12 @@ enum AlertItem: Identifiable {
     
     /// View: show new VM wizard
     @Published var showNewVMSheet: Bool
+
+    /// View: boot image to preselect in the new VM wizard
+    @Published var pendingBootImageURL: URL?
+
+    /// View: ask for a URL to download
+    @Published var showDownloadURLPrompt: Bool
     
     /// View: show an alert message
     @Published var alertItem: AlertItem?
@@ -131,6 +138,8 @@ enum AlertItem: Identifiable {
         self.busyQueue = DispatchQueue(label: "UTM Busy Queue", qos: .userInitiated)
         self.showSettingsModal = false
         self.showNewVMSheet = false
+        self.pendingBootImageURL = nil
+        self.showDownloadURLPrompt = false
         self.busy = false
         self.virtualMachines = []
         self.pendingVMs = []
@@ -436,6 +445,32 @@ enum AlertItem: Identifiable {
     func newVM() {
         showSettingsModal = false
         showNewVMSheet = true
+    }
+
+    func newVM(usingBootImage url: URL) {
+        pendingBootImageURL = url
+        newVM()
+    }
+
+    func promptDownloadURL() {
+        DispatchQueue.main.async {
+            self.showNewVMSheet = false
+            self.showDownloadURLPrompt = true
+        }
+    }
+
+    func confirmDefaultGalleryDownload() {
+        DispatchQueue.main.async {
+            self.showNewVMSheet = false
+            self.alertItem = .downloadUrl(Self.defaultGalleryDownloadUrl)
+        }
+    }
+
+    func downloadDefaultGalleryVM() {
+        DispatchQueue.main.async {
+            self.showNewVMSheet = false
+            self.downloadUTMZip(from: Self.defaultGalleryDownloadUrl)
+        }
     }
     
     func showSettingsForCurrentVM() {
@@ -838,7 +873,7 @@ enum AlertItem: Identifiable {
         listAdd(pendingVM: task.pendingVM)
         Task {
             do {
-                if let wrapped = try await task.download() {
+                if case .some(.virtualMachine(let wrapped)) = try await task.download() {
                     let vm = VMData(wrapping: wrapped)
                     try await self.save(vm: vm)
                     listAdd(vm: vm)
@@ -858,10 +893,34 @@ enum AlertItem: Identifiable {
         listAdd(pendingVM: task.pendingVM)
         Task {
             do {
-                if let wrapped = try await task.download() {
+                if case .some(.virtualMachine(let wrapped)) = try await task.download() {
                     let vm = VMData(wrapping: wrapped)
                     try await self.save(vm: vm)
                     listAdd(vm: vm)
+                }
+            } catch {
+                showErrorAlert(message: error.localizedDescription)
+            }
+            listRemove(pendingVM: task.pendingVM)
+        }
+    }
+
+    /// Download a URL and either import a UTM VM or prepare the downloaded image for a new VM.
+    /// - Parameter url: Download URL
+    func downloadWebImport(from url: URL) {
+        let task = UTMDownloadWebImportTask(for: url, named: url.lastPathComponent.isEmpty ? NSLocalizedString("Downloaded Image", comment: "UTMData") : url.lastPathComponent)
+        listAdd(pendingVM: task.pendingVM)
+        Task {
+            do {
+                if let result = try await task.download() {
+                    switch result {
+                    case .virtualMachine(let wrapped):
+                        let vm = VMData(wrapping: wrapped)
+                        try await self.save(vm: vm)
+                        listAdd(vm: vm)
+                    case .file(let url):
+                        newVM(usingBootImage: url)
+                    }
                 }
             } catch {
                 showErrorAlert(message: error.localizedDescription)

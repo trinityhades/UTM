@@ -160,6 +160,10 @@ struct VMDisplayHostedView: UIViewControllerRepresentable {
                 vm.requestVmResume()
             }
         }
+
+        func displayRequestSwitchDisplay() {
+            state.switchToNextDisplay(in: VMSessionState.allActiveSessions.values.first { $0.vm.id == vm.id })
+        }
     }
     
     let vm: any UTMSpiceVirtualMachine

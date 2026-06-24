@@ -32,7 +32,7 @@ class UTMDownloadIPSWTask: UTMDownloadTask {
         super.init(for: config.system.boot.macRecoveryIpswURL!, named: config.information.name)
     }
     
-    override func processCompletedDownload(at location: URL, response: URLResponse?) async throws -> any UTMVirtualMachine {
+    override func processCompletedDownload(at location: URL, response: URLResponse?) async throws -> UTMDownloadTaskResult {
         if !fileManager.fileExists(atPath: cacheUrl.path) {
             try fileManager.createDirectory(at: cacheUrl, withIntermediateDirectories: false)
         }
@@ -45,6 +45,7 @@ class UTMDownloadIPSWTask: UTMDownloadTask {
         await MainActor.run {
             config.system.boot.macRecoveryIpswURL = cacheIpsw
         }
-        return try UTMAppleVirtualMachine(newForConfiguration: config, destinationUrl: UTMData.defaultStorageUrl)
+        let vm = try UTMAppleVirtualMachine(newForConfiguration: config, destinationUrl: UTMData.defaultStorageUrl)
+        return .virtualMachine(vm)
     }
 }

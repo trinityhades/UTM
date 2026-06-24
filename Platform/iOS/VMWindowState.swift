@@ -154,6 +154,27 @@ extension VMWindowState {
             isDisplayZoomLocked = false
         }
     }
+
+    mutating func switchToNextDisplay(in session: VMSessionState?) {
+        guard let session else {
+            return
+        }
+        let displays = session.devices.filter {
+            if case .display(_, _) = $0 {
+                return true
+            } else {
+                return false
+            }
+        }
+        guard !displays.isEmpty else {
+            return
+        }
+        if let device, let currentIndex = displays.firstIndex(of: device) {
+            self.device = displays[(currentIndex + 1) % displays.count]
+        } else {
+            device = displays[0]
+        }
+    }
 }
 
 // MARK: - Persist changes

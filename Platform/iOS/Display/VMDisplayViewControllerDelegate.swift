@@ -36,4 +36,5 @@ import Foundation
     
     @objc optional func displayRequestExit()
     @objc optional func displayRequestPlayPause()
+    @objc optional func displayRequestSwitchDisplay()
 }

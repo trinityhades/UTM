@@ -48,7 +48,7 @@ class UTMDownloadSupportToolsTask: UTMDownloadTask {
         super.init(for: Self.supportToolsDownloadUrl, named: name)
     }
     
-    override func processCompletedDownload(at location: URL, response: URLResponse?) async throws -> any UTMVirtualMachine {
+    override func processCompletedDownload(at location: URL, response: URLResponse?) async throws -> UTMDownloadTaskResult {
         if !fileManager.fileExists(atPath: toolsUrl.path) {
             try fileManager.createDirectory(at: toolsUrl, withIntermediateDirectories: true)
         }
@@ -57,7 +57,8 @@ class UTMDownloadSupportToolsTask: UTMDownloadTask {
         }
         try fileManager.moveItem(at: location, to: supportToolsLocalUrl)
         lastDownloadGuestTools = lastModifiedTimestamp(for: response) ?? 0
-        return try await mountTools()
+        let vm = try await mountTools()
+        return .virtualMachine(vm)
     }
     
     func mountTools() async throws -> any UTMVirtualMachine {
