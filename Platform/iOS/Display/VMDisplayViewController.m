@@ -30,7 +30,9 @@
 
 - (void)setPrefersHomeIndicatorAutoHidden:(BOOL)prefersHomeIndicatorAutoHidden {
     _prefersHomeIndicatorAutoHidden = prefersHomeIndicatorAutoHidden;
+#if !TARGET_OS_TV
     [self setNeedsUpdateOfHomeIndicatorAutoHidden];
+#endif
 }
 
 - (BOOL)prefersPointerLocked {
@@ -39,7 +41,9 @@
 
 - (void)setPrefersPointerLocked:(BOOL)prefersPointerLocked {
     _prefersPointerLocked = prefersPointerLocked;
+#if !TARGET_OS_TV
     [self setNeedsUpdateOfPrefersPointerLocked];
+#endif
 }
 
 - (void)showKeyboard {

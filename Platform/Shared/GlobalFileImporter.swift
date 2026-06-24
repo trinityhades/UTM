@@ -37,9 +37,10 @@ struct GlobalFileImporterViewModifier: ViewModifier {
     #if os(iOS) || os(visionOS)
     @EnvironmentObject private var globalFileImporterShim: GlobalFileImporterShim
     #endif
-    
     func body(content: Content) -> some View {
-        #if os(iOS) || os(visionOS)
+        #if os(tvOS)
+        content
+        #elseif os(iOS) || os(visionOS)
         content
             .onChange(of: isPresented) { newValue in
                 if newValue {

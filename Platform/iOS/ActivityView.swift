@@ -16,6 +16,7 @@
 
 import SwiftUI
 
+#if !os(tvOS)
 struct ActivityView: UIViewControllerRepresentable {
     let activityItems: [Any]
     
@@ -33,3 +34,4 @@ struct ActivityView_Previews: PreviewProvider {
         ActivityView(activityItems: [])
     }
 }
+#endif

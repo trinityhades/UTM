@@ -72,8 +72,7 @@ fi
 
 xcodebuild archive -archivePath "$OUTPUT" -scheme "$SCHEME" -sdk "$SDK" $ARCH_ARGS -configuration Release CODE_SIGNING_ALLOWED=NO $TEAM_IDENTIFIER_PREFIX
 BUILT_PATH=$(find $OUTPUT.xcarchive -name '*.app' -type d | head -1)
-# Only retain the target architecture to address < iOS 15 crash & save disk space
-if [ "$SDK" == "iphoneos" ]; then
+if [ "$SDK" == "iphoneos" ] || [ "$SDK" == "appletvos" ]; then
     find "$BUILT_PATH" -type f -path '*/Frameworks/*.dylib' | while read FILE; do
         if [[ $(lipo -info "$FILE") =~ "Architectures in the fat file" ]]; then
             lipo -thin $ARCH "$FILE" -output "$FILE"

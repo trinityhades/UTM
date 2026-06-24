@@ -14,7 +14,22 @@
 // limitations under the License.
 //
 
-#if canImport(UIKit)
+#if os(tvOS)
+import Foundation
+import MobileCoreServices
+class DummyPasteboard {
+    static let general = DummyPasteboard()
+    var changeCount: Int = 0
+    var items: [[String: Any]] = []
+    var types: [String] = []
+    func setData(_ data: Data, forPasteboardType: String) {}
+    func data(forPasteboardType: String) -> Data? { nil }
+    func setValue(_ value: Any, forPasteboardType: String) {}
+    func value(forPasteboardType: String) -> Any? { nil }
+}
+typealias SystemPasteboard = DummyPasteboard
+typealias SystemPasteboardType = String
+#elseif canImport(UIKit)
 import UIKit
 import MobileCoreServices
 typealias SystemPasteboard = UIPasteboard

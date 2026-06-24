@@ -73,7 +73,10 @@ struct VMReleaseNotesView: View {
                     #if os(iOS) || os(visionOS)
                         .frame(maxWidth: .infinity)
                     #endif
-                }.keyboardShortcut(.defaultAction)
+                }
+                #if !os(tvOS)
+                .keyboardShortcut(.defaultAction)
+                #endif
                 .buttonStyle(ReleaseButtonStyle(isProminent: true))
             }
         }

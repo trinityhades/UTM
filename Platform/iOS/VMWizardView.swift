@@ -25,6 +25,9 @@ struct VMWizardView: View {
             WizardNavigationView(wizardState: wizardState) {
                 presentationMode.wrappedValue.dismiss()
             }
+            #if os(tvOS)
+            .frame(width: 1200, height: 900)
+            #endif
         } else {
             NavigationView {
                 WizardWrapper(page: .start, wizardState: wizardState) {
@@ -35,6 +38,9 @@ struct VMWizardView: View {
             .alert(item: $wizardState.alertMessage) { msg in
                 Alert(title: Text(msg.message))
             }
+            #if os(tvOS)
+            .frame(width: 1200, height: 900)
+            #endif
         }
     }
 }
@@ -110,8 +116,10 @@ fileprivate struct WizardWrapper: View {
             NavigationLink(destination: WizardWrapper(page: .sharing, wizardState: wizardState, onDismiss: onDismiss), tag: .sharing, selection: $nextPage) {}
             NavigationLink(destination: WizardWrapper(page: .summary, wizardState: wizardState, onDismiss: onDismiss), tag: .summary, selection: $nextPage) {}
         }
+        #if !os(tvOS)
         .listStyle(.insetGrouped) // needed for iOS 14
         .textFieldStyle(.roundedBorder)
+        #endif
         .modifier(WizardToolbar(wizardState: wizardState, onDismiss: onDismiss))
         .onChange(of: nextPage) { newPage in
             if newPage == nil {
@@ -144,7 +152,9 @@ fileprivate struct WizardNavigationView: View {
                     WizardViewWrapper(page: page, wizardState: wizardState)
                         .modifier(WizardToolbar(wizardState: wizardState, onDismiss: onDismiss))
                 }
+                #if !os(tvOS)
                 .textFieldStyle(.roundedBorder)
+                #endif
                 .disabled(wizardState.isBusy)
         }
         .alert("Error", isPresented: $isAlertShown) {

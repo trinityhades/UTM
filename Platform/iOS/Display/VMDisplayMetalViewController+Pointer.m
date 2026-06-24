@@ -1,3 +1,13 @@
+#import <TargetConditionals.h>
+#if TARGET_OS_TV
+#import "VMDisplayMetalViewController+Pointer.h"
+@implementation VMDisplayMetalViewController (Pointer)
+- (BOOL)hasTouchpadPointer { return NO; }
+- (void)initPointerInteraction {}
+- (void)startGCMouse {}
+- (void)stopGCMouse {}
+@end
+#else
 //
 // Copyright © 2020 osy. All rights reserved.
 //
@@ -190,3 +200,4 @@ NS_AVAILABLE_IOS(13.4)
 }
 
 @end
+#endif

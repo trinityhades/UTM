@@ -43,6 +43,7 @@
 }
 
 - (IBAction)keyboardPastePressed:(UIButton *)sender {
+#if !TARGET_OS_TV
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     NSString *string = pasteboard.string;
     if (string) {
@@ -51,6 +52,7 @@
     } else {
         UTMLog(@"No string to paste.");
     }
+#endif
 }
 
 - (void)resetModifierToggles {

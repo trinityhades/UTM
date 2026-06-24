@@ -37,10 +37,16 @@ struct UTMApp: App {
     }
 
     var body: some Scene {
+        #if os(tvOS)
+        WindowGroup {
+            UTMSingleWindowView(data: data)
+        }
+        #else
         WindowGroup {
             UTMSingleWindowView(data: data)
         }.commands {
             VMCommands()
         }
+        #endif
     }
 }

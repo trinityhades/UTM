@@ -16,7 +16,7 @@
 
 import TipKit
 
-@available(iOS 17, macOS 14, *)
+@available(iOS 17, macOS 14, tvOS 17, *)
 struct UTMTipDonate: Tip {
     @Parameter
     static var timesLaunched: Int = 0
@@ -41,7 +41,7 @@ struct UTMTipDonate: Tip {
     }
 }
 
-@available(iOS 17, macOS 14, *)
+@available(iOS 17, macOS 14, tvOS 17, *)
 struct UTMTipHideToolbar: Tip {
     @Parameter
     static var didHideToolbar: Bool = true
@@ -61,7 +61,7 @@ struct UTMTipHideToolbar: Tip {
     }
 }
 
-@available(iOS 17, macOS 14, *)
+@available(iOS 17, macOS 14, tvOS 17, *)
 struct UTMTipCreateVM: Tip {
     @Parameter(.transient)
     static var isVMListEmpty: Bool = false

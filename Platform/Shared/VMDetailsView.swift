@@ -281,7 +281,7 @@ struct Screenshot: View {
 private extension View {
     @ViewBuilder
     func optionalBackgroundExtensionEffect() -> some View {
-        if #available(iOS 26, macOS 26, visionOS 26, *) {
+        if #available(iOS 26, macOS 26, visionOS 26, tvOS 26, *) {
             self.backgroundExtensionEffect()
         } else {
             self
@@ -479,6 +479,10 @@ private struct OptionalSelectableText: View {
     }
     
     var body: some View {
+        #if os(tvOS)
+        (content.map { Text($0) } ?? Text("Inactive", comment: "VMDetailsView"))
+            .foregroundColor(.secondary)
+        #else
         if #available(iOS 15, macOS 12, *) {
             (content.map { Text($0) } ?? Text("Inactive", comment: "VMDetailsView"))
                 .foregroundColor(.secondary)
@@ -487,6 +491,7 @@ private struct OptionalSelectableText: View {
             (content.map { Text($0) } ?? Text("Inactive", comment: "VMDetailsView"))
                 .foregroundColor(.secondary)
         }
+        #endif
     }
 }
 

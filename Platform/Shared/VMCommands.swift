@@ -16,6 +16,7 @@
 
 import SwiftUI
 
+#if !os(tvOS)
 struct VMCommands: Commands {
     @Environment(\.openURL) private var openURL
     
@@ -53,6 +54,7 @@ struct VMCommands: Commands {
         openURL(URL(string: url)!)
     }
 }
+#endif
 
 extension NSNotification {
     static let NewVirtualMachine = NSNotification.Name("NewVirtualMachine")

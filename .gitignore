@@ -71,3 +71,7 @@ build*/
 sysroot*/
 .DS_Store
 CodeSigning.xcconfig
+
+**/github-accounts.json
+.vscode
+buildServer.json

@@ -247,9 +247,27 @@ struct VMWizardHardwareView: View {
             if isExpertMode || selectedMachine?.maxSupportedCores == 0 {
                 Section {
                     HStack {
+                        #if os(tvOS)
+                        HStack {
+                            Text("CPU Cores")
+                            Spacer()
+                            Button("-") {
+                                if wizardState.systemCpuCount > minCores {
+                                    wizardState.systemCpuCount -= 1
+                                }
+                            }
+                            Text("\(wizardState.systemCpuCount)")
+                            Button("+") {
+                                if wizardState.systemCpuCount < maxCores {
+                                    wizardState.systemCpuCount += 1
+                                }
+                            }
+                        }
+                        #else
                         Stepper(value: $wizardState.systemCpuCount, in: minCores...maxCores) {
                             Text("CPU Cores")
                         }
+                        #endif
                         NumberTextField("", number: $wizardState.systemCpuCount, prompt: "Default", onEditingChanged: { _ in
                             guard wizardState.systemCpuCount != 0  else {
                                 return
@@ -292,7 +310,9 @@ struct VMWizardHardwareView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .textFieldStyle(.roundedBorder)
+        #endif
         .onAppear {
             if wizardState.useVirtualization {
                 isExpertMode = true

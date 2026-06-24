@@ -84,7 +84,9 @@ struct VMToolbarDriveMenuView: View {
             }
         } label: {
             Label("Disk", systemImage: "opticaldisc")
-        }.fileImporter(isPresented: $isFileImporterShown, allowedContentTypes: isSelectingShare ? [.folder] : [.item]) { result in
+        }
+        #if !os(tvOS)
+        .fileImporter(isPresented: $isFileImporterShown, allowedContentTypes: isSelectingShare ? [.folder] : [.item]) { result in
             switch result {
             case .success(let success):
                 if isSelectingShare {
@@ -96,6 +98,7 @@ struct VMToolbarDriveMenuView: View {
                 session.nonfatalError = failure.localizedDescription
             }
         }
+        #endif
         .onChange(of: isRefreshRequired) { _ in
             // dummy here since UTMDrive is not observable
             // this forces a redraw when we toggle

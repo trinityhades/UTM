@@ -67,7 +67,9 @@ struct UTMPlaceholderVMView<Content>: View where Content: View {
 #endif
         }.padding([.top, .bottom], 10)
         .onTapGesture(perform: toggleDetailsPopup)
+        #if !os(tvOS)
         .popover(isPresented: $showingDetails, content: popover)
+        #endif
         .onDisappear {
             showingDetails = false
         }

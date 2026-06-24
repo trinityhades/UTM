@@ -308,6 +308,11 @@ extension UTMQemuVirtualMachine {
         }
         let isRunningAsDisposible = options.contains(.bootDisposibleMode)
         let isRemoteSession = options.contains(.remoteSession)
+        #if os(tvOS)
+        let localSpicePort = findFreeTCPPort()
+        #else
+        let localSpicePort: UInt16? = nil
+        #endif
         #if WITH_SERVER
         let spicePassword = isRemoteSession ? String.random(length: 32) : nil
         let spicePort = isRemoteSession ? try SwiftPortmap.Port.TCP(unusedPortStartingAt: UInt16(serverPort)) : nil
@@ -322,6 +327,12 @@ extension UTMQemuVirtualMachine {
             config.qemu.spiceServerPort = spicePort?.internalPort
             config.qemu.spiceServerPassword = spicePassword
             config.qemu.isSpiceServerTlsEnabled = true
+            #endif
+            #if os(tvOS)
+            if let localSpicePort = localSpicePort {
+                config.qemu.spiceServerPort = localSpicePort
+                config.qemu.isSpiceServerTlsEnabled = false
+            }
             #endif
         }
 
@@ -395,7 +406,16 @@ extension UTMQemuVirtualMachine {
             try await key[2].write(to: config.spiceTlsCertUrl)
             spicePublicKey = key[3]
         } else {
-            let ioService = UTMSpiceIO(socketUrl: spiceSocketUrl, options: options)
+            let ioService: UTMSpiceIO
+            #if os(tvOS)
+            if let localSpicePort = localSpicePort {
+                ioService = UTMSpiceIO(host: "127.0.0.1", port: Int(localSpicePort), password: nil, options: options)
+            } else {
+                ioService = UTMSpiceIO(socketUrl: spiceSocketUrl, options: options)
+            }
+            #else
+            ioService = UTMSpiceIO(socketUrl: spiceSocketUrl, options: options)
+            #endif
             ioService.logHandler = { [weak system] (line: String) -> Void in
                 guard !line.contains("spice_make_scancode") else {
                     return // do not log key presses for privacy reasons
@@ -919,7 +939,9 @@ extension UTMQemuVirtualMachine {
 extension UTMQemuVirtualMachine {
     private func _ensureQemuResourceCacheUpToDate() throws {
         let fm = FileManager.default
-        let qemuResourceUrl = Bundle.main.url(forResource: "qemu", withExtension: nil)!
+        guard let qemuResourceUrl = Bundle.main.url(forResource: "qemu", withExtension: nil) else {
+            throw UTMQemuConfigurationError.qemuResourcesNotFound
+        }
         let cacheUrl = try fm.url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         let qemuCacheUrl = cacheUrl.appendingPathComponent("qemu", isDirectory: true)
 
@@ -1038,3 +1060,33 @@ extension UTMQemuVirtualMachineError: LocalizedError {
         }
     }
 }
+
+#if os(tvOS)
+private func findFreeTCPPort() -> UInt16? {
+    var addr = sockaddr_in()
+    addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+    addr.sin_family = sa_family_t(AF_INET)
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+    addr.sin_port = 0
+    
+    let fd = socket(AF_INET, SOCK_STREAM, 0)
+    guard fd >= 0 else { return nil }
+    defer { close(fd) }
+    
+    let rc = withUnsafePointer(to: &addr) {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+            bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+        }
+    }
+    guard rc == 0 else { return nil }
+    
+    var len = socklen_t(MemoryLayout<sockaddr_in>.size)
+    let getSockNameRc = withUnsafeMutablePointer(to: &addr) {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+            getsockname(fd, $0, &len)
+        }
+    }
+    guard getSockNameRc == 0 else { return nil }
+    return UInt16(bigEndian: addr.sin_port)
+}
+#endif

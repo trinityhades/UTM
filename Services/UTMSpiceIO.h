@@ -59,6 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithSocketUrl:(NSURL *)socketUrl options:(UTMSpiceIOOptions)options NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithHost:(NSString *)host tlsPort:(NSInteger)tlsPort serverPublicKey:(NSData *)serverPublicKey password:(NSString *)password options:(UTMSpiceIOOptions)options NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHost:(NSString *)host port:(NSInteger)port password:(nullable NSString *)password options:(UTMSpiceIOOptions)options;
 - (void)changeSharedDirectory:(NSURL *)url;
 
 - (BOOL)startWithError:(NSError * _Nullable *)error;

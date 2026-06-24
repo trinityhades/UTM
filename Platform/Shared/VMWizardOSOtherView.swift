@@ -70,7 +70,9 @@ struct VMWizardOSOtherView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .fileImporter(isPresented: $isFileImporterPresented, allowedContentTypes: [.data], onCompletion: processImage)
+        #endif
     }
     
     private func processImage(_ result: Result<URL, Error>) {

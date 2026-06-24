@@ -50,7 +50,9 @@ struct UTMDonateView: View {
                     }
                 }
             }.navigationTitle("Support UTM")
+            #if !os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close") {
@@ -59,6 +61,9 @@ struct UTMDonateView: View {
                 }
             }
         }.navigationViewStyle(.stack)
+        #if os(tvOS)
+        .frame(width: 1200, height: 900)
+        #endif
     }
 }
 

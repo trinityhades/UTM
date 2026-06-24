@@ -46,6 +46,7 @@ struct VMToolbarDisplayMenuView: View {
             } label: {
                 MenuLabel("Current Window", systemImage: "rectangle.inset.filled.on.rectangle")
             }
+            #if !os(tvOS)
             if let externalWindowBinding = session.externalWindowBinding {
                 Menu {
                     Button {
@@ -80,13 +81,15 @@ struct VMToolbarDisplayMenuView: View {
                     MenuLabel("New Window…", systemImage: "plus.rectangle.on.rectangle")
                 }
             }
-
+            #endif
         } label: {
             Label("Display", systemImage: "rectangle.on.rectangle")
         }.overlay(Badge(count: session.devices.count), alignment: .topTrailing)
+        #if !os(tvOS)
         .onChange(of: externalDevice) { newValue in
             session.externalWindowBinding?.device.wrappedValue = newValue
         }
+        #endif
     }
 }
 
@@ -110,10 +113,14 @@ private struct Badge: View {
 private extension View {
     @ViewBuilder
     func customBadge(_ count: Int) -> some View {
+        #if os(tvOS)
+        self
+        #elseif !os(tvOS)
         if #available(iOS 15, *) {
             self.badge(count)
         } else {
             self.overlay(Badge(count: count), alignment: .topTrailing)
         }
+        #endif
     }
 }

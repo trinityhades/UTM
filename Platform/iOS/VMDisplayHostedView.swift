@@ -139,6 +139,27 @@ struct VMDisplayHostedView: UIViewControllerRepresentable {
         func requestInputTablet(_ tablet: Bool) {
             vm.requestInputTablet(tablet)
         }
+        
+        func displayRequestExit() {
+            DispatchQueue.main.async {
+                if self.state.isRunning {
+                    self.state.alert = .powerDown
+                } else {
+                    if let session = VMSessionState.allActiveSessions.values.first(where: { $0.vm.id == self.vm.id }) {
+                        session.stop()
+                    }
+                }
+            }
+        }
+        
+        func displayRequestPlayPause() {
+            let shouldSaveState = !vm.isRunningAsDisposible
+            if vm.state == .started {
+                vm.requestVmPause(save: shouldSaveState)
+            } else if vm.state == .paused {
+                vm.requestVmResume()
+            }
+        }
     }
     
     let vm: any UTMSpiceVirtualMachine

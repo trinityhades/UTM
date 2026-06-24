@@ -189,7 +189,9 @@ extension UTMQemuConfigurationQEMU {
         if hasUefiBoot {
             let fileManager = FileManager.default
             // save EFI variables
-            let resourceURL = Bundle.main.url(forResource: "qemu", withExtension: nil)!
+            guard let resourceURL = Bundle.main.url(forResource: "qemu", withExtension: nil) else {
+                throw UTMQemuConfigurationError.qemuResourcesNotFound
+            }
             let templateVarsURL: URL
             let secure = hasPreloadedSecureBootKeys ? "-secure" : ""
             if let prefix = Self.uefiImagePrefix(forArchitecture: system.architecture, isVars: true) {

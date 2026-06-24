@@ -59,7 +59,9 @@ struct ContentView: View {
             }
         }
         .onOpenURL(perform: handleURL)
+        #if !os(tvOS)
         .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
+        #endif
         .onReceive(NSNotification.NewVirtualMachine) { _ in
             data.newVM()
         }.onReceive(NSNotification.OpenVirtualMachine) { _ in
@@ -69,7 +71,10 @@ struct ContentView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
                 openSheetPresented = true
             }
-        }.fileImporter(isPresented: $openSheetPresented, allowedContentTypes: [.UTM, .UTMextension], allowsMultipleSelection: true, onCompletion: selectImportedUTM)
+        }
+        #if !os(tvOS)
+        .fileImporter(isPresented: $openSheetPresented, allowedContentTypes: [.UTM, .UTMextension], allowsMultipleSelection: true, onCompletion: selectImportedUTM)
+        #endif
         .onReceive(NSNotification.InstallGuestTools) { notification in
             guard let vm = notification.object as? any UTMVirtualMachine else {
                 logger.error("InstallGuestTools notification but no VM object is provided!")
@@ -81,7 +86,9 @@ struct ContentView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .onDrop(of: [.fileURL], delegate: self)
+        #endif
         .onAppear {
             Task {
                 await data.listRefresh()
@@ -102,7 +109,7 @@ struct ContentView: View {
             NSWindow.allowsAutomaticWindowTabbing = false
             #else
             data.triggeriOSNetworkAccessPrompt()
-            #if !os(visionOS)
+            #if os(iOS)
             IQKeyboardManager.shared.enable = true
             #endif
             #if WITH_JIT
@@ -177,6 +184,7 @@ struct ContentView: View {
     }
 }
 
+#if !os(tvOS)
 extension ContentView: DropDelegate {
     func validateDrop(info: DropInfo) -> Bool {
         !urlsFrom(info: info).isEmpty
@@ -215,6 +223,7 @@ extension ContentView: DropDelegate {
         return validURLs
     }
 }
+#endif
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {

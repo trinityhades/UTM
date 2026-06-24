@@ -57,7 +57,11 @@ enum AlertItem: Identifiable {
     
     /// Sandbox location for storing .utm bundles
     nonisolated static var defaultStorageUrl: URL {
+        #if os(tvOS)
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        #else
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        #endif
     }
     
     /// View: show VM settings
@@ -148,6 +152,24 @@ enum AlertItem: Identifiable {
         if !fileManager.fileExists(atPath: Self.defaultStorageUrl.path) {
             try? fileManager.createDirectory(at: Self.defaultStorageUrl, withIntermediateDirectories: false)
         }
+        #if os(tvOS)
+        // Check if there are any bundled VMs and copy them to storage URL if they don't exist
+        if let bundleUrls = Bundle.main.urls(forResourcesWithExtension: "utm", subdirectory: nil) {
+            for bundleUrl in bundleUrls {
+                let destUrl = Self.defaultStorageUrl.appendingPathComponent(bundleUrl.lastPathComponent)
+                if !fileManager.fileExists(atPath: destUrl.path) {
+                    logger.info("Copying bundled VM \(bundleUrl.lastPathComponent) to storage...")
+                    try? fileManager.copyItem(at: bundleUrl, to: destUrl)
+                } else {
+                    // Overwrite config.plist to propagate any configuration changes
+                    let srcConfigUrl = bundleUrl.appendingPathComponent("config.plist")
+                    let destConfigUrl = destUrl.appendingPathComponent("config.plist")
+                    try? fileManager.removeItem(at: destConfigUrl)
+                    try? fileManager.copyItem(at: srcConfigUrl, to: destConfigUrl)
+                }
+            }
+        }
+        #endif
         // wrap stale VMs
         var list = virtualMachines
         for i in list.indices.reversed() {

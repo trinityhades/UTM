@@ -38,7 +38,7 @@ struct VMToolbarView: View {
     
     private var spacing: CGFloat {
         let add: CGFloat
-        if #available(iOS 26, *) {
+        if #available(iOS 26, tvOS 26, *) {
             add = 0
         } else {
             add = 8
@@ -81,7 +81,7 @@ struct VMToolbarView: View {
     }
     
     var body: some View {
-        if #available(iOS 26, *) {
+        if #available(iOS 26, tvOS 26, *) {
             GlassEffectContainer(spacing: spacing) {
                 toolbarBody
             }
@@ -93,72 +93,79 @@ struct VMToolbarView: View {
     @ViewBuilder
     var toolbarBody: some View {
         toolbarContainer { geometry in
+            toolbarControls(geometry: geometry)
+        }
+    }
+
+    @ViewBuilder
+    private func toolbarControls(geometry: GeometryProxy) -> some View {
+        Group {
             if !isCollapsed {
                 Group {
-                    Button {
-                        if state.isRunning {
-                            state.alert = .powerDown
-                        } else {
-                            state.alert = .terminateApp
-                        }
-                    } label: {
-                        if state.isRunning {
-                            Label("Power Off", systemImage: "power")
-                        } else {
-                            Label("Force Kill", systemImage: "xmark")
-                        }
-                    }.animationUniqueID("power", in: namespace)
-                    Button {
-                        session.pauseResume()
-                    } label: {
-                        Label(state.isRunning ? "Pause" : "Play", systemImage: state.isRunning ? "pause" : "play")
-                    }.animationUniqueID("pause", in: namespace)
-                    Button {
-                        state.alert = .restart
-                    } label: {
-                        Label("Restart", systemImage: "restart")
-                    }.animationUniqueID("restart", in: namespace)
-                    Button {
-                        if case .serial(_, _) = state.device {
-                            let template = session.qemuConfig.serials[state.device!.configIndex].terminal?.resizeCommand
-                            state.toggleDisplayResize(command: template)
-                        } else {
-                            state.toggleDisplayResize()
-                        }
-                    } label: {
-                        Label("Zoom", systemImage: state.isViewportChanged ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
-                    }.animationUniqueID("resize", in: namespace)
-                    #if WITH_USB
-                    if session.vm.hasUsbRedirection {
-                        VMToolbarUSBMenuView()
-                            .animationUniqueID("usb", in: namespace)
+                Button {
+                    if state.isRunning {
+                        state.alert = .powerDown
+                    } else {
+                        state.alert = .terminateApp
                     }
-                    #endif
-                    VMToolbarDriveMenuView(config: session.qemuConfig)
-                        .animationUniqueID("drive", in: namespace)
-                    VMToolbarDisplayMenuView(state: $state)
-                        .animationUniqueID("display", in: namespace)
-                    Button {
-                        // ignore if we are showing shortcuts
-                        guard !isKeyShortcutsShown else {
-                            return
-                        }
-                        state.isKeyboardRequested = !state.isKeyboardShown
-                    } label: {
-                        Label("Keyboard", systemImage: "keyboard")
-                    }.animationUniqueID("keyboard", in: namespace)
-                    #if !WITH_REMOTE
-                    .simultaneousGesture(
-                        LongPressGesture().onEnded { _ in
-                            isKeyShortcutsShown.toggle()
-                        }
-                    )
-                    .sheet(isPresented: $isKeyShortcutsShown) {
-                        VMKeyboardShortcutsView { keys in
-                            session.sendKeys(keys: keys)
-                        }
+                } label: {
+                    if state.isRunning {
+                        Label("Power Off", systemImage: "power")
+                    } else {
+                        Label("Force Kill", systemImage: "xmark")
                     }
-                    #endif
+                }.animationUniqueID("power", in: namespace)
+                Button {
+                    session.pauseResume()
+                } label: {
+                    Label(state.isRunning ? "Pause" : "Play", systemImage: state.isRunning ? "pause" : "play")
+                }.animationUniqueID("pause", in: namespace)
+                Button {
+                    state.alert = .restart
+                } label: {
+                    Label("Restart", systemImage: "restart")
+                }.animationUniqueID("restart", in: namespace)
+                Button {
+                    if case .serial(_, _) = state.device {
+                        let template = session.qemuConfig.serials[state.device!.configIndex].terminal?.resizeCommand
+                        state.toggleDisplayResize(command: template)
+                    } else {
+                        state.toggleDisplayResize()
+                    }
+                } label: {
+                    Label("Zoom", systemImage: state.isViewportChanged ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right")
+                }.animationUniqueID("resize", in: namespace)
+                #if WITH_USB
+                if session.vm.hasUsbRedirection {
+                    VMToolbarUSBMenuView()
+                        .animationUniqueID("usb", in: namespace)
+                }
+                #endif
+                VMToolbarDriveMenuView(config: session.qemuConfig)
+                    .animationUniqueID("drive", in: namespace)
+                VMToolbarDisplayMenuView(state: $state)
+                    .animationUniqueID("display", in: namespace)
+                Button {
+                    // ignore if we are showing shortcuts
+                    guard !isKeyShortcutsShown else {
+                        return
+                    }
+                    state.isKeyboardRequested = !state.isKeyboardShown
+                } label: {
+                    Label("Keyboard", systemImage: "keyboard")
+                }.animationUniqueID("keyboard", in: namespace)
+                #if !WITH_REMOTE
+                .simultaneousGesture(
+                    LongPressGesture().onEnded { _ in
+                        isKeyShortcutsShown.toggle()
+                    }
+                )
+                .sheet(isPresented: $isKeyShortcutsShown) {
+                    VMKeyboardShortcutsView { keys in
+                        session.sendKeys(keys: keys)
+                    }
+                }
+                #endif
                 }.toolbarButtonStyle(horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass)
                 .disabled(state.isBusy)
             }
@@ -176,6 +183,7 @@ struct VMToolbarView: View {
             .opacity(toolbarToggleOpacity)
             .modifier(Shake(shake: shake))
             .offset(dragOffset)
+            #if !os(tvOS)
             .highPriorityGesture(
                 DragGesture(coordinateSpace: .named("Window"))
                     .onChanged { value in
@@ -195,19 +203,23 @@ struct VMToolbarView: View {
                         longIdleTimeout.assertUserInteraction()
                     }
             )
-            .onAppear {
-                resetIdle()
-                longIdleTimeout.assertUserInteraction()
-                if isCollapsed {
-                    withOptionalAnimation(.easeInOut(duration: 1)) {
-                        shake.toggle()
-                    }
+            #endif
+        }
+        #if os(tvOS)
+        .focusSection()
+        #endif
+        .onAppear {
+            resetIdle()
+            longIdleTimeout.assertUserInteraction()
+            if isCollapsed {
+                withOptionalAnimation(.easeInOut(duration: 1)) {
+                    shake.toggle()
                 }
             }
-            .onChange(of: state.isUserInteracting) { newValue in
-                longIdleTimeout.assertUserInteraction()
-                session.activeWindow = state.id
-            }
+        }
+        .onChange(of: state.isUserInteracting) { newValue in
+            longIdleTimeout.assertUserInteraction()
+            session.activeWindow = state.id
         }
     }
     
@@ -309,18 +321,30 @@ extension ToolbarButtonBaseStyle {
     }
     
     func makeBodyBase(label: Label, isPressed: Bool) -> some View {
+        ToolbarButtonBase(label: label, isPressed: isPressed, size: size)
+    }
+}
+
+private struct ToolbarButtonBase<Label: View>: View {
+    let label: Label
+    let isPressed: Bool
+    let size: CGFloat
+
+    @Environment(\.isFocused) private var isFocused
+
+    var body: some View {
         ZStack {
             Circle()
-                .foregroundColor(.gray)
-                .opacity(isPressed ? 0.8 : 0.7)
+                .foregroundColor(isFocused ? .white : .gray)
+                .opacity(isPressed ? 0.85 : (isFocused ? 0.95 : 0.7))
                 .blur(radius: 0.1)
             label
                 .labelStyle(.iconOnly)
-                .foregroundColor(isPressed ? .secondary : .white)
-                .opacity(0.75)
+                .foregroundColor(isFocused ? .black : (isPressed ? .secondary : .white))
+                .opacity(isFocused ? 1 : 0.75)
         }.frame(width: size, height: size)
         .mask(Circle().frame(width: size-2, height: size-2))
-        .scaleEffect(isPressed ? 1.2 : 1)
+        .scaleEffect(isPressed ? 1.2 : (isFocused ? 1.12 : 1))
         .hoverEffect(.lift)
     }
 }
@@ -367,7 +391,7 @@ struct ToolbarMenuStyle: MenuStyle, ToolbarButtonBaseStyle {
 private extension View {
     @ViewBuilder
     func toolbarButtonStyle(horizontalSizeClass: UserInterfaceSizeClass? = nil, verticalSizeClass: UserInterfaceSizeClass? = nil) -> some View {
-        if #available(iOS 26, *) {
+        if #available(iOS 26, tvOS 26, *) {
             self
                 .menuStyle(.button)
                 .buttonStyle(.glass)
@@ -384,7 +408,7 @@ private extension View {
     
     @ViewBuilder
     func animationUniqueID(_ id: (some Hashable & Sendable)?, in namespace: Namespace.ID) -> some View {
-        if #available(iOS 26, *) {
+        if #available(iOS 26, tvOS 26, *) {
             self
                 .glassEffectID(id, in: namespace)
                 .matchedGeometryEffect(id: id, in: namespace)

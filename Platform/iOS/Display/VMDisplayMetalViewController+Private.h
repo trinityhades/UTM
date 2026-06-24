@@ -52,15 +52,18 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable) UIPanGestureRecognizer *twoPan;
 @property (nonatomic, nullable) UIPanGestureRecognizer *threePan;
 @property (nonatomic, nullable) UITapGestureRecognizer *tap;
+@property (nonatomic, nullable) UITapGestureRecognizer *doubleTap;
 @property (nonatomic, nullable) UITapGestureRecognizer *tapPencil;
 @property (nonatomic, nullable) UITapGestureRecognizer *twoTap;
 @property (nonatomic, nullable) UILongPressGestureRecognizer *longPress;
+#if !TARGET_OS_TV
 @property (nonatomic, nullable) UIPinchGestureRecognizer *pinch;
+#endif
 
 //Gamepad
 @property (nonatomic, nullable) GCController *controller;
 
-#if !defined(TARGET_OS_VISION) || !TARGET_OS_VISION
+#if (!defined(TARGET_OS_VISION) || !TARGET_OS_VISION) && (!defined(TARGET_OS_TV) || !TARGET_OS_TV)
 // Feedback generators
 @property (nonatomic, nullable) UISelectionFeedbackGenerator *clickFeedbackGenerator;
 #endif

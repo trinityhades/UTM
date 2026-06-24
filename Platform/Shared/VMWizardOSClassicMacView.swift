@@ -91,6 +91,7 @@ struct VMWizardOSClassicMacView: View {
                 Spinner(size: .large)
             }
         }
+        #if !os(tvOS)
         .fileImporter(isPresented: $isFileImporterPresented, allowedContentTypes: [.data]) { result in
             wizardState.busyWorkAsync {
                 let url = try result.get()
@@ -104,6 +105,7 @@ struct VMWizardOSClassicMacView: View {
                 }
             }
         }
+        #endif
         .onAppear {
             wizardState.bootDevice = .cd
         }

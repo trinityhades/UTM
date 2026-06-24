@@ -55,9 +55,15 @@ struct VMNavigationListView: View {
                 UTMUnavailableVMView(vm: vm)
             } else {
                 if #available(iOS 16, macOS 13, visionOS 1, *) {
-                    VMCardView(vm: vm)
+                    #if os(tvOS)
+                    NavigationLink(destination: VMDetailsView(vm: vm), tag: vm, selection: $data.selectedVM) {
+                        VMCardView(vm: vm)
+                    }
+                    #else
+                    let cardView = VMCardView(vm: vm)
                         .modifier(VMContextMenuModifier(vm: vm))
                         .tag(vm)
+                    cardView
                         .swipeActions {
                             Button(role: .destructive) {
                                 confirmAction = .confirmDeleteVM(vm: vm)
@@ -65,6 +71,7 @@ struct VMNavigationListView: View {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
+                    #endif
                 } else {
                     NavigationLink(
                         destination: VMDetailsView(vm: vm),
@@ -133,18 +140,18 @@ private struct VMListModifier: ViewModifier {
     private let _donateTip: Any?
     private let _createTip: Any?
 
-    @available(iOS 17, macOS 14, *)
+    @available(iOS 17, macOS 14, tvOS 17, *)
     private var donateTip: UTMTipDonate {
         _donateTip as! UTMTipDonate
     }
 
-    @available(iOS 17, macOS 14, *)
+    @available(iOS 17, macOS 14, tvOS 17, *)
     private var createTip: UTMTipCreateVM {
         _createTip as! UTMTipCreateVM
     }
 
     init() {
-        if #available(iOS 17, macOS 14, *) {
+        if #available(iOS 17, macOS 14, tvOS 17, *) {
             _donateTip = UTMTipDonate()
             _createTip = UTMTipCreateVM()
         } else {
@@ -158,7 +165,9 @@ private struct VMListModifier: ViewModifier {
         #if os(macOS)
         .frame(minWidth: 250, idealWidth: 350)
         #endif
+        #if os(macOS) || os(iOS)
         .listStyle(.sidebar)
+        #endif
         .navigationTitle(productName)
         #if os(macOS)
         .navigationSubtitle(data.selectedVM?.detailsTitleLabel ?? "")
@@ -169,6 +178,7 @@ private struct VMListModifier: ViewModifier {
                 newButton
             }
             #else
+            #if !os(tvOS)
             #if !WITH_REMOTE // FIXME: implement remote feature
             ToolbarItem(placement: .navigationBarLeading) {
                 if #available(iOS 17, visionOS 99, *) {
@@ -207,16 +217,27 @@ private struct VMListModifier: ViewModifier {
                 }
             }
             #endif
+            #endif
+            #if os(tvOS)
+            ToolbarItem(placement: .navigationBarLeading) {
+                newButton
+            }
+            #endif
             #if !os(visionOS) && !WITH_REMOTE
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Settings") {
                     settingsPresented.toggle()
                 }
+                #if os(tvOS)
+                .frame(minWidth: 200)
+                #endif
             }
             #endif
+            #if !os(tvOS)
             ToolbarItem(placement: .navigationBarTrailing) {
                 EditButton()
             }
+            #endif
             #endif
         }
         #if os(iOS)
@@ -266,6 +287,40 @@ private struct VMListModifier: ViewModifier {
             sheetPresented = false
         }
         #else
+        #if os(tvOS)
+        .fullScreenCover(isPresented: $data.showNewVMSheet) {
+            ZStack {
+                Color.black.opacity(0.4)
+                    .background(.ultraThinMaterial)
+                    .edgesIgnoringSafeArea(.all)
+                VMWizardView()
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(radius: 20)
+            }
+        }
+        .fullScreenCover(isPresented: $settingsPresented) {
+            ZStack {
+                Color.black.opacity(0.4)
+                    .background(.ultraThinMaterial)
+                    .edgesIgnoringSafeArea(.all)
+                UTMSettingsView()
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(radius: 20)
+            }
+        }
+        #if !WITH_REMOTE
+        .fullScreenCover(isPresented: $donatePresented) {
+            ZStack {
+                Color.black.opacity(0.4)
+                    .background(.ultraThinMaterial)
+                    .edgesIgnoringSafeArea(.all)
+                UTMDonateView()
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(radius: 20)
+            }
+        }
+        #endif
+        #else
         .sheet(isPresented: $data.showNewVMSheet) {
             VMWizardView()
         }
@@ -274,6 +329,7 @@ private struct VMListModifier: ViewModifier {
             UTMDonateView()
         }
         #endif
+        #endif
         .onReceive(NSNotification.OpenVirtualMachine) { _ in
             data.showNewVMSheet = false
         }
@@ -281,8 +337,15 @@ private struct VMListModifier: ViewModifier {
     }
     
     private var newButton: some View {
+        #if os(tvOS)
+        Button(action: { data.newVM() }, label: {
+            Label("New VM", systemImage: "plus")
+        })
+        .frame(minWidth: 200)
+        #else
         Button(action: { data.newVM() }, label: {
             Label("New VM", systemImage: "plus").labelStyle(.iconOnly)
         }).help("Create a new VM")
+        #endif
     }
 }

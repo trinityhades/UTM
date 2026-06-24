@@ -46,12 +46,14 @@ extension UIViewController {
     }
     
     @objc dynamic func setChildForHomeIndicatorAutoHidden(_ value: UIViewController?) {
+        #if !os(tvOS)
         if let value = value {
             Self._utm__childForHomeIndicatorAutoHiddenStorage[self] = value
         } else {
             Self._utm__childForHomeIndicatorAutoHiddenStorage.removeValue(forKey: self)
         }
         setNeedsUpdateOfHomeIndicatorAutoHidden()
+        #endif
     }
     
     private static var _utm__childViewControllerForPointerLockStorage: [UIViewController: UIViewController] = [:]
@@ -61,22 +63,26 @@ extension UIViewController {
     }
     
     @objc dynamic func setChildViewControllerForPointerLock(_ value: UIViewController?) {
+        #if !os(tvOS)
         if let value = value {
             Self._utm__childViewControllerForPointerLockStorage[self] = value
         } else {
             Self._utm__childViewControllerForPointerLockStorage.removeValue(forKey: self)
         }
         setNeedsUpdateOfPrefersPointerLocked()
+        #endif
     }
     
     /// SwiftUI currently does not provide a way to set the View Conrtoller's home indicator or pointer lock
     fileprivate static func patchViewController() {
+        #if !os(tvOS)
         patch(#selector(getter: Self.childForHomeIndicatorAutoHidden),
               with: #selector(getter: Self._utm__childForHomeIndicatorAutoHidden),
               class: Self.self)
         patch(#selector(getter: Self.childViewControllerForPointerLock),
               with: #selector(getter: Self._utm__childViewControllerForPointerLock),
               class: Self.self)
+        #endif
     }
 }
 
@@ -135,8 +141,10 @@ extension UIWindow {
     }
     
     fileprivate static func patchWindow() {
+        #if !os(tvOS)
         patch(#selector(sendEvent),
               with: #selector(_utm__sendEvent),
               class: Self.self)
+        #endif
     }
 }

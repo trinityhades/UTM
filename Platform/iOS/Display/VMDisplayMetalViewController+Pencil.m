@@ -20,6 +20,9 @@
 #import "VMDisplayMetalViewController+Pencil.h"
 #import "VMDisplayMetalViewController+Touch.h"
 
+#import <TargetConditionals.h>
+#if !TARGET_OS_TV
+
 NS_AVAILABLE_IOS(12.1)
 @implementation VMDisplayMetalViewController (Pencil)
 
@@ -81,3 +84,5 @@ NS_AVAILABLE_IOS(12.1)
 }
 
 @end
+
+#endif

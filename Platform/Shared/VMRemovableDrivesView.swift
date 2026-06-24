@@ -77,7 +77,9 @@ struct VMRemovableDrivesView: View {
                     } else {
                         Button("Browse…", action: { shareDirectoryFileImportPresented.toggle() })
                     }
-                }.fileImporter(isPresented: $shareDirectoryFileImportPresented, allowedContentTypes: [Self.shareDirectoryUTType], onCompletion: selectShareDirectory)
+                }
+                #if !os(tvOS)
+                .fileImporter(isPresented: $shareDirectoryFileImportPresented, allowedContentTypes: [Self.shareDirectoryUTType], onCompletion: selectShareDirectory)
                     .disabled(mode == .virtfs && vm.state != .stopped)
                     .onDrop(of: [Self.shareDirectoryUTType], isTargeted: nil) { providers in
                         guard let item = providers.first, item.hasItemConformingToTypeIdentifier(Self.shareDirectoryUTType.identifier) else { return false }
@@ -92,6 +94,9 @@ struct VMRemovableDrivesView: View {
                         }
                         return true
                     }
+                #else
+                .disabled(mode == .virtfs && vm.state != .stopped)
+                #endif
             }
             ForEach(config.drives.filter { $0.isExternal }) { drive in
                 HStack {
@@ -145,7 +150,9 @@ struct VMRemovableDrivesView: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .foregroundColor(.secondary)
-                }.fileImporter(isPresented: $diskImageFileImportPresented, allowedContentTypes: [Self.diskImageUTType]) { result in
+                }
+                #if !os(tvOS)
+                .fileImporter(isPresented: $diskImageFileImportPresented, allowedContentTypes: [Self.diskImageUTType]) { result in
                     if let currentDrive = self.currentDrive {
                         selectRemovableImage(forDrive: currentDrive, result: result)
                         self.currentDrive = nil
@@ -164,6 +171,7 @@ struct VMRemovableDrivesView: View {
                     }
                     return true
                 }
+                #endif
             }
         }
     }

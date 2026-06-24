@@ -145,7 +145,7 @@ struct VMConfirmActionModifier: ViewModifier {
                     onConfirm(action)
                 }
             case .confirmMoveVM(_):
-                if #available(iOS 26, macOS 26, visionOS 26, *) {
+                if #available(iOS 26, macOS 26, visionOS 26, tvOS 26, *) {
                     Button("Confirm", role: .confirm) {
                         onConfirm(action)
                     }

@@ -30,7 +30,7 @@ import Virtualization // for getting network interfaces
     
     /// Shared between helper and main process to store Unix sockets
     var socketURL: URL {
-        #if os(iOS) || os(visionOS)
+        #if os(iOS) || os(visionOS) || os(tvOS)
         return FileManager.default.temporaryDirectory
         #else
         let appGroup = Bundle.main.infoDictionary?["AppGroupIdentifier"] as? String
@@ -189,6 +189,7 @@ import Virtualization // for getting network interfaces
                 spiceTlsCertUrl
             } else {
                 "port=\(port)"
+                "addr=127.0.0.1"
             }
         } else {
             "unix=on"
@@ -333,7 +334,11 @@ import Virtualization // for getting network interfaces
     }
 
     private var isRemoteSpice: Bool {
+        #if os(tvOS)
+        false
+        #else
         qemu.spiceServerPort != nil
+        #endif
     }
 
     private var isClassicMacM68K: Bool {

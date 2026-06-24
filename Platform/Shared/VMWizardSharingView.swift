@@ -34,7 +34,9 @@ struct VMWizardSharingView: View {
                 }
             }
         }
+        #if !os(tvOS)
         .fileImporter(isPresented: $isFileImporterPresented, allowedContentTypes: [.folder], onCompletion: processDirectory)
+        #endif
     }
     
     private func processDirectory(_ result: Result<URL, Error>) {

@@ -15,7 +15,9 @@
 //
 
 import SwiftUI
+#if !os(tvOS)
 import SwiftUIVisualEffects
+#endif
 #if os(visionOS)
 import VisionKeyboardKit
 #endif
@@ -30,9 +32,12 @@ struct VMWindowView: View {
     #if os(visionOS)
     @Environment(\.dismissWindow) private var dismissWindow
     #endif
+    @AppStorage("ToolbarIsCollapsed") private var isCollapsed: Bool = false
 
+    #if !os(tvOS)
     private let keyboardDidShowNotification = NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)
     private let keyboardDidHideNotification = NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)
+    #endif
     private let didReceiveMemoryWarningNotification = NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)
 
     init(id: VMSessionState.WindowID, isInteractive: Bool = true) {
@@ -66,7 +71,11 @@ struct VMWindowView: View {
                     HeadlessView()
                 }
                 if state.isBusy || !state.isRunning {
+                    #if os(tvOS)
+                    Rectangle().fill(.ultraThinMaterial)
+                    #else
                     BlurEffect().blurEffectStyle(.light)
+                    #endif
                     VStack {
                         Spacer()
                         HStack {
@@ -95,8 +104,10 @@ struct VMWindowView: View {
                         Spacer()
                     }.labelStyle(.iconOnly)
                         .font(.system(size: 128))
+                        #if !os(tvOS)
                         .vibrancyEffect()
                         .vibrancyEffectStyle(.label)
+                        #endif
                 }
             }.background(Color.black)
             .ignoresSafeArea()
@@ -107,7 +118,21 @@ struct VMWindowView: View {
             #endif
         }
         .modifier(VMToolbarOrnamentModifier(state: $state))
+        #if !os(tvOS)
         .statusBarHidden(true)
+        #endif
+        #if os(tvOS)
+        .onExitCommand {
+            if state.isRunning {
+                state.alert = .powerDown
+            } else {
+                session.stop()
+            }
+        }
+        .onPlayPauseCommand {
+            session.pauseResume()
+        }
+        #endif
         .alert(item: $state.alert, content: { type in
             switch type {
             case .powerDown:
@@ -184,6 +209,7 @@ struct VMWindowView: View {
         .onChange(of: session.isDynamicResolutionSupported) { newValue in
             state.isDynamicResolutionSupported = newValue
         }
+        #if !os(tvOS)
         .onReceive(keyboardDidShowNotification) { _ in
             state.isKeyboardShown = true
             state.isKeyboardRequested = true
@@ -192,6 +218,7 @@ struct VMWindowView: View {
             state.isKeyboardShown = false
             state.isKeyboardRequested = false
         }
+        #endif
         .onReceive(didReceiveMemoryWarningNotification) { _ in
             if session.activeWindow == state.id && !session.hasShownMemoryWarning {
                 session.hasShownMemoryWarning = true
@@ -281,7 +308,11 @@ struct VMWindowView: View {
 private struct HeadlessView: View {
     var body: some View {
         ZStack {
+            #if os(tvOS)
+            Rectangle().fill(.ultraThickMaterial)
+            #else
             BlurEffect().blurEffectStyle(.dark)
+            #endif
             VStack {
                 Image(systemName: "rectangle.dashed")
                     .font(.title)
@@ -294,8 +325,10 @@ private struct HeadlessView: View {
                 .foregroundColor(.white)
                 .background(Color.gray.opacity(0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 25.0, style: .continuous))
+                #if !os(tvOS)
                 .vibrancyEffect()
                 .vibrancyEffectStyle(.label)
+                #endif
         }
     }
 }

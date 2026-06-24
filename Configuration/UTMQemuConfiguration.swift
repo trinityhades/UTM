@@ -118,6 +118,7 @@ final class UTMQemuConfiguration: UTMConfiguration {
 
 enum UTMQemuConfigurationError: Error {
     case migrationFailed
+    case qemuResourcesNotFound
     case uefiNotSupported
 }
 
@@ -126,6 +127,8 @@ extension UTMQemuConfigurationError: LocalizedError {
         switch self {
         case .migrationFailed:
             return NSLocalizedString("Failed to migrate configuration from a previous UTM version.", comment: "UTMQemuConfigurationError")
+        case .qemuResourcesNotFound:
+            return NSLocalizedString("QEMU resources are missing from the app bundle.", comment: "UTMQemuConfigurationError")
         case .uefiNotSupported:
             return NSLocalizedString("UEFI is not supported with this architecture.", comment: "UTMQemuConfigurationError")
         }

@@ -27,7 +27,7 @@ struct VMShareItemModifier: ViewModifier {
             content
         }
     }
-    #else
+    #elseif !os(tvOS)
     func body(content: Content) -> some View {
         content.popover(isPresented: $isPresented) {
             if let shareItem = shareItem?.toActivityItem() {
@@ -35,6 +35,10 @@ struct VMShareItemModifier: ViewModifier {
                     .ignoresSafeArea()
             }
         }
+    }
+    #else
+    func body(content: Content) -> some View {
+        content
     }
     #endif
     

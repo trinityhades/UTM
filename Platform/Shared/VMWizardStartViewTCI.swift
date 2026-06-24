@@ -18,6 +18,7 @@ import SwiftUI
 
 struct VMWizardStartViewTCI: View {
     @ObservedObject var wizardState: VMWizardState
+    @EnvironmentObject private var data: UTMData
 
     var body: some View {
         VMWizardContent("Start") {
@@ -54,6 +55,17 @@ struct VMWizardStartViewTCI: View {
                         Image(systemName: "doc")
                     }
                 }
+                #if os(tvOS)
+                Button {
+                    data.alertItem = .message("To download prebuilt VMs, visit this URL on another device:\nhttps://mac.getutm.app/gallery/")
+                } label: {
+                    Label {
+                        Text("Download prebuilt from UTM Gallery…")
+                    } icon: {
+                        Image(systemName: "arrow.down.doc")
+                    }
+                }
+                #else
                 Link(destination: URL(string: "https://mac.getutm.app/gallery/")!) {
                     Label {
                         Text("Download prebuilt from UTM Gallery…")
@@ -61,6 +73,7 @@ struct VMWizardStartViewTCI: View {
                         Image(systemName: "arrow.down.doc")
                     }
                 }
+                #endif
             } header: {
                 Text("Existing")
             }

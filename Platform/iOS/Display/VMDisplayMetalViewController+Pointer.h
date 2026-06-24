@@ -14,13 +14,18 @@
 // limitations under the License.
 //
 
+#import <TargetConditionals.h>
 #import "UIKit/UIKit.h"
 #import "VMDisplayMetalViewController.h"
 @import GameController;
 NS_ASSUME_NONNULL_BEGIN
 
+#if TARGET_OS_TV
+@interface VMDisplayMetalViewController (Pointer)
+#else
 NS_AVAILABLE_IOS(13.4)
 @interface VMDisplayMetalViewController (Pointer) <UIPointerInteractionDelegate>
+#endif
 
 @property (nonatomic, readonly) BOOL hasTouchpadPointer;
 

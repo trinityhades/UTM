@@ -47,13 +47,33 @@ struct VMConfigDisplayConsoleView: View {
     var body: some View {
         Section(header: Text("Style")) {
             VMConfigConstantPicker("Theme", selection: $config.theme.bound)
+            #if !os(tvOS)
             ColorPicker("Text Color", selection: textColor)
             ColorPicker("Background Color", selection: backgroundColor)
+            #endif
             VMConfigConstantPicker("Font", selection: $config.font)
             HStack {
+                #if os(tvOS)
+                HStack {
+                    Text("Font Size")
+                    Spacer()
+                    Button("-") {
+                        if config.fontSize > 1 {
+                            config.fontSize -= 1
+                        }
+                    }
+                    Text("\(config.fontSize)")
+                    Button("+") {
+                        if config.fontSize < 72 {
+                            config.fontSize += 1
+                        }
+                    }
+                }
+                #else
                 Stepper(value: $config.fontSize, in: 1...72) {
                         Text("Font Size")
                 }
+                #endif
                 NumberTextField("", number: $config.fontSize, prompt: "12")
                     .frame(width: 50)
                     .multilineTextAlignment(.trailing)

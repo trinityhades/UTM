@@ -18,7 +18,7 @@ import SwiftUI
 
 struct VMPlaceholderView: View {
     var body: some View {
-        if #available(iOS 16, macOS 13, *) {
+        if #available(iOS 16, macOS 13, tvOS 16, *) {
             VMPlaceholderViewNew()
         } else {
             VMPlaceholderViewOld()
@@ -40,9 +40,11 @@ fileprivate struct VMPlaceholderViewOld: View {
     }
 }
 
-@available(iOS 16, macOS 13, *)
+@available(iOS 16, macOS 13, tvOS 16, *)
 fileprivate struct VMPlaceholderViewNew: View {
+    #if !os(tvOS)
     @Environment(\.openWindow) private var openWindow
+    #endif
 
     var body: some View {
         VStack {
@@ -84,22 +86,38 @@ fileprivate struct FirstRow: View {
         TileButton(Label(String.create, systemImage: "plus.circle")) {
             data.newVM()
         }
+        #if os(tvOS)
+        TileButton(Label(String.browse, systemImage: "arrow.down.circle")) {
+            data.alertItem = .message("To browse the gallery, visit this URL on another device:\nhttps://mac.getutm.app/gallery/")
+        }
+        #else
         TileButton(Label(String.browse, systemImage: "arrow.down.circle")) {
             openURL(URL(string: "https://mac.getutm.app/gallery/")!)
         }
+        #endif
     }
 }
 
 fileprivate struct SecondRow: View {
+    @EnvironmentObject private var data: UTMData
     @Environment(\.openURL) private var openURL
 
     var body: some View {
+        #if os(tvOS)
+        TileButton(Label(String.guide, systemImage: "book.circle")) {
+            data.alertItem = .message("To read the user guide, visit this URL on another device:\nhttps://docs.getutm.app/basics/basics/")
+        }
+        TileButton(Label(String.support, systemImage: "questionmark.circle")) {
+            data.alertItem = .message("For support, visit this URL on another device:\nhttps://docs.getutm.app/")
+        }
+        #else
         TileButton(Label(String.guide, systemImage: "book.circle")) {
             openURL(URL(string: "https://docs.getutm.app/basics/basics/")!)
         }
         TileButton(Label(String.support, systemImage: "questionmark.circle")) {
             openURL(URL(string: "https://docs.getutm.app/")!)
         }
+        #endif
     }
 }
 
@@ -127,7 +145,17 @@ private struct TileButton: View {
     }
     
     var body: some View {
-        if #available(iOS 26, macOS 26, visionOS 26, *) {
+        #if os(tvOS)
+        Button(action: action, label: {
+            if compact {
+                label
+            } else {
+                label
+                    .labelStyle(TileLabelStyle())
+            }
+        })
+        #else
+        if #available(iOS 26, macOS 26, visionOS 26, tvOS 26, *) {
             Button(action: action, label: {
                 if compact {
                     label
@@ -151,6 +179,7 @@ private struct TileButton: View {
                 }
             }).buttonStyle(BigButtonStyle(width: width, height: height))
         }
+        #endif
     }
 }
 

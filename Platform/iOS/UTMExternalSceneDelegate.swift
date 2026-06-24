@@ -23,6 +23,7 @@ class UTMExternalSceneDelegate: NSObject, UIWindowSceneDelegate, ObservableObjec
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
+        #if !os(tvOS)
         if session.role == .windowExternalDisplay {
             let window = UIWindow(windowScene: windowScene)
             let viewController = UIHostingController(rootView: UTMSingleWindowView())
@@ -31,6 +32,7 @@ class UTMExternalSceneDelegate: NSObject, UIWindowSceneDelegate, ObservableObjec
             window.isHidden = false
             setupDisplayLinkIfNecessary()
         }
+        #endif
     }
     
     func windowScene(_ windowScene: UIWindowScene, didUpdate previousCoordinateSpace: UICoordinateSpace, interfaceOrientation previousInterfaceOrientation: UIInterfaceOrientation, traitCollection previousTraitCollection: UITraitCollection) {

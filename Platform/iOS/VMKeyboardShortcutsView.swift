@@ -40,7 +40,9 @@ struct VMKeyboardShortcutsView: View {
             }.navigationTitle("Keyboard Shortcut")
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    #if !os(tvOS)
                     EditButton()
+                    #endif
                     Button("Close") {
                         presentationMode.wrappedValue.dismiss()
                     }
@@ -81,7 +83,10 @@ private struct NewKeyboardShortcutView: View {
                             Text(keyCode.title).tag(keyCode)
                         }
                     }
-                }.pickerStyle(.wheel)
+                }
+                #if !os(tvOS)
+                .pickerStyle(.wheel)
+                #endif
                 Button("Add") {
                     if let key = newKey {
                         newShortcut.append(key)
@@ -92,7 +97,9 @@ private struct NewKeyboardShortcutView: View {
         }.navigationTitle("New Keyboard Shortcut")
         .toolbar {
             ToolbarItemGroup(placement: .navigationBarTrailing) {
+                #if !os(tvOS)
                 EditButton()
+                #endif
                 Button("Save") {
                     if !newShortcut.isEmpty {
                         keyboardShortcuts.append(newShortcut)

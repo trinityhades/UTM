@@ -98,7 +98,9 @@ struct VMSettingsView: View {
                 }
             }, editContent: {
                 if #available(iOS 15, *) {
+                    #if !os(tvOS)
                     EditButton()
+                    #endif
                 }
             }, cancelContent: {
                 Button(action: cancel) {
@@ -109,7 +111,9 @@ struct VMSettingsView: View {
                     Text("Save")
                 }
             })
+            #if !os(tvOS)
             .fileImporter(isPresented: $globalFileImporterShim.isPresented, allowedContentTypes: globalFileImporterShim.allowedContentTypes, onCompletion: globalFileImporterShim.onCompletion)
+            #endif
         }.environmentObject(globalFileImporterShim)
         .disabled(data.busy)
         .overlay(BusyOverlay())

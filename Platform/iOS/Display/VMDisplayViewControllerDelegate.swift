@@ -33,4 +33,7 @@ import Foundation
     func display(_ display: CSDisplay, didResizeTo size: CGSize)
     func serialDidError(_ error: String)
     func requestInputTablet(_ tablet: Bool)
+    
+    @objc optional func displayRequestExit()
+    @objc optional func displayRequestPlayPause()
 }

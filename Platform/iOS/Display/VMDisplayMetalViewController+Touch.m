@@ -38,19 +38,37 @@ const CGFloat kScrollResistance = 10.0f;
     self.cursor = [[VMCursor alloc] initWithVMViewController:self];
     self.scroll = [[VMScroll alloc] initWithVMViewController:self];
     
-#if defined(TARGET_OS_VISION) && TARGET_OS_VISION
-    // we only support pan and tap on visionOS
+#if (defined(TARGET_OS_VISION) && TARGET_OS_VISION) || (defined(TARGET_OS_TV) && TARGET_OS_TV)
+    // we only support pan and tap on visionOS/tvOS
     self.pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(gesturePan:)];
+#if !TARGET_OS_TV
     self.pan.minimumNumberOfTouches = 1;
     self.pan.maximumNumberOfTouches = 1;
+#else
+    self.pan.allowedTouchTypes = @[ @(UITouchTypeIndirect), @(UITouchTypeDirect) ];
+#endif
     self.pan.delegate = self;
     self.pan.cancelsTouchesInView = NO;
     self.tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(gestureTap:)];
     self.tap.delegate = self;
+#if !TARGET_OS_TV
     self.tap.allowedTouchTypes = @[ @(UITouchTypeDirect) ];
+#else
+    self.tap.allowedTouchTypes = @[ @(UITouchTypeIndirect), @(UITouchTypeDirect) ];
+    self.tap.allowedPressTypes = @[ @(UIPressTypeSelect) ];
+    self.doubleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(gestureDoubleTap:)];
+    self.doubleTap.numberOfTapsRequired = 2;
+    self.doubleTap.delegate = self;
+    self.doubleTap.allowedTouchTypes = @[ @(UITouchTypeIndirect), @(UITouchTypeDirect) ];
+    self.doubleTap.allowedPressTypes = @[ @(UIPressTypeSelect) ];
+    [self.tap requireGestureRecognizerToFail:self.doubleTap];
+#endif
     self.tap.cancelsTouchesInView = NO;
     [self.mtkView addGestureRecognizer:self.pan];
     [self.mtkView addGestureRecognizer:self.tap];
+#if TARGET_OS_TV
+    [self.mtkView addGestureRecognizer:self.doubleTap];
+#endif
 #else
     // Set up gesture recognizers because Storyboards is BROKEN and doing it there crashes!
     self.swipeUp = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(gestureSwipeUp:)];
@@ -108,7 +126,9 @@ const CGFloat kScrollResistance = 10.0f;
     [self.mtkView addGestureRecognizer:self.pinch];
     
     // Feedback generator for clicks
+#if !TARGET_OS_TV
     self.clickFeedbackGenerator = [[UISelectionFeedbackGenerator alloc] init];
+#endif
 #endif
 }
 
@@ -189,6 +209,8 @@ const CGFloat kScrollResistance = 10.0f;
 - (VMMouseType)indirectMouseType {
 #if TARGET_OS_VISION
     return VMMouseTypeAbsolute;
+#elif TARGET_OS_TV
+    return VMMouseTypeRelative;
 #else
     if (@available(iOS 14.0, *)) {
         return VMMouseTypeRelative;
@@ -405,7 +427,7 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
         self.mouseMiddleDown = NO;
         [self.vmInput sendMouseButton:button mask:kCSInputButtonNone pressed:NO];
     }];
-#if !defined(TARGET_OS_VISION) || !TARGET_OS_VISION
+#if (!defined(TARGET_OS_VISION) || !TARGET_OS_VISION) && (!defined(TARGET_OS_TV) || !TARGET_OS_TV)
     [self.clickFeedbackGenerator selectionChanged];
 #endif
 }
@@ -422,7 +444,7 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
         button = kCSInputButtonLeft;
     }
     if (state == UIGestureRecognizerStateBegan) {
-#if !defined(TARGET_OS_VISION) || !TARGET_OS_VISION
+#if (!defined(TARGET_OS_VISION) || !TARGET_OS_VISION) && (!defined(TARGET_OS_TV) || !TARGET_OS_TV)
         [self.clickFeedbackGenerator selectionChanged];
 #endif
         if (primary) {
@@ -444,11 +466,32 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
 }
 
 - (IBAction)gestureTap:(UITapGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateEnded &&
-        self.serverModeCursor) { // otherwise we handle in touchesBegan
+    if (sender.state != UIGestureRecognizerStateEnded) {
+        return;
+    }
+#if TARGET_OS_TV
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"ToolbarIsCollapsed"]) {
+        return;
+    }
+    if (!self.delegate.qemuInputLegacy) {
+        [self switchMouseType:VMMouseTypeRelative];
+    }
+    [self mouseClick:kCSInputButtonLeft location:[sender locationInView:sender.view]];
+#else
+    if (self.serverModeCursor) { // otherwise we handle in touchesBegan
         [self mouseClick:kCSInputButtonLeft location:[sender locationInView:sender.view]];
     }
+#endif
 }
+
+#if TARGET_OS_TV
+- (IBAction)gestureDoubleTap:(UITapGestureRecognizer *)sender {
+    if (sender.state == UIGestureRecognizerStateEnded) {
+        BOOL isCollapsed = [[NSUserDefaults standardUserDefaults] boolForKey:@"ToolbarIsCollapsed"];
+        [[NSUserDefaults standardUserDefaults] setBool:!isCollapsed forKey:@"ToolbarIsCollapsed"];
+    }
+}
+#endif
 
 - (IBAction)gestureTwoTap:(UITapGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded &&
@@ -466,6 +509,7 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
     }
 }
 
+#if !TARGET_OS_TV
 - (IBAction)gesturePinch:(UIPinchGestureRecognizer *)sender {
     // disable pinch if move screen on pan is disabled
     if (!(self.twoFingerPanType == VMGestureTypeMoveScreen || self.threeFingerPanType == VMGestureTypeMoveScreen)) {
@@ -487,6 +531,7 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
         sender.scale = 1.0;
     }
 }
+#endif
 
 - (IBAction)gestureSwipeUp:(UISwipeGestureRecognizer *)sender {
     if (sender.state == UIGestureRecognizerStateEnded) {
@@ -514,7 +559,22 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
 }
 
 #pragma mark - UIGestureRecognizerDelegate
+#if (defined(TARGET_OS_VISION) && TARGET_OS_VISION) || (defined(TARGET_OS_TV) && TARGET_OS_TV)
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+#if TARGET_OS_TV
+    if (gestureRecognizer == self.tap &&
+        [otherGestureRecognizer isKindOfClass:[UITapGestureRecognizer class]] &&
+        ((UITapGestureRecognizer *)otherGestureRecognizer).numberOfTapsRequired > 1) {
+        return YES;
+    }
+#endif
+    return NO;
+}
 
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    return NO;
+}
+#else
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRequireFailureOfGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
     if (gestureRecognizer == self.twoPan && otherGestureRecognizer == self.swipeUp) {
         return YES;
@@ -593,6 +653,7 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
         return NO;
     }
 }
+#endif
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveEvent:(UIEvent *)event API_AVAILABLE(ios(13.4)) {
     if (event.type == UIEventTypeTransform) {
@@ -671,6 +732,7 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
                 BOOL secondary = NO;
                 BOOL middle = NO;
                 CGPoint pos = [touch locationInView:self.mtkView];
+#if !TARGET_OS_TV
                 // iOS 13.4+ Pointing device support
                 if (@available(iOS 13.4, *)) {
                     if (touch.type == UITouchTypeIndirectPointer) {
@@ -679,7 +741,8 @@ static CGRect CGRectClipToBounds(CGRect rect1, CGRect rect2) {
                         middle = (event.buttonMask & 0x4) != 0; // undocumented mask
                     }
                 }
-#if !defined(TARGET_OS_VISION) || !TARGET_OS_VISION
+#endif
+#if (!defined(TARGET_OS_VISION) || !TARGET_OS_VISION) && (!defined(TARGET_OS_TV) || !TARGET_OS_TV)
                 // Apple Pencil 2 right click mode
                 if (@available(iOS 12.1, *)) {
                     if ([self pencilRightClickForTouch:touch]) {

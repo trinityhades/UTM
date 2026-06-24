@@ -49,6 +49,28 @@ struct RAMSlider: View {
     }
     
     var body: some View {
+        #if os(tvOS)
+        HStack {
+            Button {
+                let cur = memorySizeIndexObserver.wrappedValue
+                if cur > 0 { memorySizeIndexObserver.wrappedValue = cur - 1 }
+                validateMemorySize(false)
+            } label: { Image(systemName: "minus.circle") }
+            .buttonStyle(.bordered)
+            
+            NumberTextField("", number: $systemMemory, prompt: "Size", onEditingChanged: validateMemorySize)
+                .frame(width: 150)
+                
+            Button {
+                let cur = memorySizeIndexObserver.wrappedValue
+                if cur < Float(validMemoryValues.count - 1) { memorySizeIndexObserver.wrappedValue = cur + 1 }
+                validateMemorySize(false)
+            } label: { Image(systemName: "plus.circle") }
+            .buttonStyle(.bordered)
+            
+            Text("MiB")
+        }
+        #else
         GeometryReader { geo in
             HStack {
                 Slider(value: memorySizeIndexObserver, in: 0...Float(validMemoryValues.count-1), step: 1) { start in
@@ -63,6 +85,7 @@ struct RAMSlider: View {
                 Text("MiB")
             }
         }.frame(height: 30)
+        #endif
     }
     
     func memorySizePickerIndex(size: NSNumber?) -> Float {

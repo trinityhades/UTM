@@ -46,6 +46,9 @@ public extension VMDisplayViewController {
             parent.setChildViewControllerForPointerLock(nil)
             UIPress.pressResponderOverride = nil
         }
+        #if os(tvOS)
+        NotificationCenter.default.removeObserver(self, name: UserDefaults.didChangeNotification, object: nil)
+        #endif
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -53,7 +56,12 @@ public extension VMDisplayViewController {
         if let parent = parent {
             parent.setChildForHomeIndicatorAutoHidden(self)
             parent.setChildViewControllerForPointerLock(self)
+            #if os(tvOS)
+            updatePressResponderOverride()
+            NotificationCenter.default.addObserver(self, selector: #selector(userDefaultsDidChange), name: UserDefaults.didChangeNotification, object: nil)
+            #else
             UIPress.pressResponderOverride = self
+            #endif
         }
         #if !os(visionOS) && WITH_LOCATION_BACKGROUND
         if runInBackground {
@@ -117,6 +125,20 @@ public extension VMDisplayViewController {
         return UserDefaults.standard.integer(forKey: key)
     }
 
+    #if os(tvOS)
+    @objc private func userDefaultsDidChange() {
+        updatePressResponderOverride()
+    }
+
+    private func updatePressResponderOverride() {
+        if UserDefaults.standard.bool(forKey: "ToolbarIsCollapsed") {
+            UIPress.pressResponderOverride = self
+        } else if UIPress.pressResponderOverride === self {
+            UIPress.pressResponderOverride = nil
+        }
+    }
+    #endif
+
     @discardableResult
     func debounce(_ delaySeconds: Int, context: Any? = nil, action: @escaping () -> Void) -> Any {
         if context != nil {
@@ -127,4 +149,5 @@ public extension VMDisplayViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(delaySeconds), execute: item)
         return item
     }
+
 }

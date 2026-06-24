@@ -25,6 +25,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 @property (nonatomic, nullable) NSURL *socketUrl;
 @property (nonatomic, nullable) NSString *host;
 @property (nonatomic) NSInteger tlsPort;
+@property (nonatomic) NSInteger port;
 @property (nonatomic, nullable) NSData *serverPublicKey;
 @property (nonatomic, nullable) NSString *password;
 @property (nonatomic) UTMSpiceIOOptions options;
@@ -89,12 +90,31 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
     return self;
 }
 
+- (instancetype)initWithHost:(NSString *)host port:(NSInteger)port password:(nullable NSString *)password options:(UTMSpiceIOOptions)options {
+    if (self = [super init]) {
+        self.host = host;
+        self.port = port;
+        self.password = password;
+        self.options = options;
+        self.mutableDisplays = [NSMutableArray array];
+        self.mutableSerials = [NSMutableArray array];
+    }
+    
+    return self;
+}
+
 - (void)initializeSpiceIfNeeded {
     if (!self.spiceConnection) {
         if (self.socketUrl) {
+            UTMLog(@"[UTMSpiceIO] initializeSpiceIfNeeded: socketUrl=%@", self.socketUrl);
             NSURL *relativeSocketFile = [NSURL fileURLWithPath:self.socketUrl.lastPathComponent];
             self.spiceConnection = [[CSConnection alloc] initWithUnixSocketFile:relativeSocketFile];
+        } else if (self.port) {
+            UTMLog(@"[UTMSpiceIO] initializeSpiceIfNeeded: host=%@, port=%ld", self.host, (long)self.port);
+            self.spiceConnection = [[CSConnection alloc] initWithHost:self.host port:[@(self.port) stringValue]];
+            self.spiceConnection.password = self.password;
         } else {
+            UTMLog(@"[UTMSpiceIO] initializeSpiceIfNeeded: host=%@, tlsPort=%ld", self.host, (long)self.tlsPort);
             self.spiceConnection = [[CSConnection alloc] initWithHost:self.host tlsPort:[@(self.tlsPort) stringValue] serverPublicKey:self.serverPublicKey];
             self.spiceConnection.password = self.password;
         }
@@ -108,6 +128,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 #pragma mark - Actions
 
 - (BOOL)startWithError:(NSError * _Nullable *)error {
+    UTMLog(@"[UTMSpiceIO] startWithError");
     if (!self.spice) {
         self.spice = [CSMain sharedInstance];
     }
@@ -138,12 +159,15 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 }
 
 - (BOOL)connectWithError:(NSError * _Nullable *)error {
+    UTMLog(@"[UTMSpiceIO] connectWithError");
     if (![self.spiceConnection connect]) {
+        UTMLog(@"[UTMSpiceIO] connection failed to start");
         if (error) {
             *error = [NSError errorWithDomain:kUTMErrorDomain code:-1 userInfo:@{NSLocalizedDescriptionKey: NSLocalizedString(@"Internal error trying to connect to SPICE server.", "UTMSpiceIO")}];
         }
         return NO;
     } else {
+        UTMLog(@"[UTMSpiceIO] connection started successfully");
         return YES;
     }
 }
@@ -179,6 +203,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 
 - (void)spiceConnected:(CSConnection *)connection {
     NSAssert(connection == self.spiceConnection, @"Unknown connection");
+    UTMLog(@"[UTMSpiceIO] SPICE Connected");
     self.isConnected = YES;
     dispatch_async(dispatch_get_main_queue(), ^{
 #if defined(WITH_USB)
@@ -192,6 +217,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 }
 
 - (void)spiceInputAvailable:(CSConnection *)connection input:(CSInput *)input {
+    UTMLog(@"[UTMSpiceIO] SPICE Input Available");
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.primaryInput == nil) {
             self.primaryInput = input;
@@ -201,6 +227,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 }
 
 - (void)spiceInputUnavailable:(CSConnection *)connection input:(CSInput *)input {
+    UTMLog(@"[UTMSpiceIO] SPICE Input Unavailable");
     dispatch_async(dispatch_get_main_queue(), ^{
         if (self.primaryInput == input) {
             self.primaryInput = nil;
@@ -210,6 +237,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 }
 
 - (void)spiceDisconnected:(CSConnection *)connection {
+    UTMLog(@"[UTMSpiceIO] SPICE Disconnected");
     self.isConnected = NO;
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([self.delegate respondsToSelector:@selector(spiceDidDisconnect)]) {
@@ -219,6 +247,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 }
 
 - (void)spiceError:(CSConnection *)connection code:(CSConnectionError)code message:(nullable NSString *)message {
+    UTMLog(@"[UTMSpiceIO] SPICE Error: code=%ld, message=%@", (long)code, message);
     self.isConnected = NO;
     dispatch_async(dispatch_get_main_queue(), ^{
 #if defined(WITH_REMOTE)
@@ -231,6 +260,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 
 - (void)spiceDisplayCreated:(CSConnection *)connection display:(CSDisplay *)display {
     NSAssert(connection == self.spiceConnection, @"Unknown connection");
+    UTMLog(@"[UTMSpiceIO] SPICE Display Created: monitorID=%ld, isPrimary=%d", (long)display.monitorID, display.isPrimaryDisplay);
     dispatch_async(dispatch_get_main_queue(), ^{
         if (display.isPrimaryDisplay) {
             self.primaryDisplay = display;
@@ -242,6 +272,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 
 - (void)spiceDisplayUpdated:(CSConnection *)connection display:(CSDisplay *)display {
     NSAssert(connection == self.spiceConnection, @"Unknown connection");
+    UTMLog(@"[UTMSpiceIO] SPICE Display Updated: monitorID=%ld, size=(%f, %f)", (long)display.monitorID, display.displaySize.width, display.displaySize.height);
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.delegate spiceDidUpdateDisplay:display];
     });
@@ -267,6 +298,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 }
 
 - (void)spiceForwardedPortOpened:(CSConnection *)connection port:(CSPort *)port {
+    UTMLog(@"[UTMSpiceIO] SPICE Forwarded Port Opened: %@", port.name);
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([port.name isEqualToString:@"org.qemu.monitor.qmp.0"]) {
 #if !defined(WITH_REMOTE)
@@ -291,6 +323,7 @@ NSString *const kUTMErrorDomain = @"com.utmapp.utm";
 }
 
 - (void)spiceForwardedPortClosed:(CSConnection *)connection port:(CSPort *)port {
+    UTMLog(@"[UTMSpiceIO] SPICE Forwarded Port Closed: %@", port.name);
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([port.name isEqualToString:@"org.qemu.monitor.qmp.0"]) {
         }

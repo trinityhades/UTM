@@ -89,11 +89,15 @@ struct VMConfigInfoView: View {
     }
 
     private var notesField: some View {
+        #if os(tvOS)
+        TextField("Notes", text: $config.notes.bound)
+        #else
         TextEditor(text: $config.notes.bound)
             #if os(macOS)
             .border(Color.primary, width: 0.5)
             #endif
             .frame(minHeight: 200)
+        #endif
     }
 
     @ViewBuilder
@@ -143,9 +147,13 @@ struct VMConfigInfoView: View {
             #else
             Button(action: { imageSelectVisible.toggle() }, label: {
                 IconPreview(url: config.iconURL)
-            }).popover(isPresented: $imageSelectVisible, arrowEdge: .bottom) {
+            })
+            #if !os(tvOS)
+            .popover(isPresented: $imageSelectVisible, arrowEdge: .bottom) {
                 ImagePicker(onImageSelected: imageCustomSelected)
-            }.buttonStyle(.plain)
+            }
+            #endif
+            .buttonStyle(.plain)
             #endif
         case .operatingSystem:
             #if os(macOS)

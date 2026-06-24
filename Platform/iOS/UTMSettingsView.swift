@@ -29,6 +29,25 @@ struct UTMSettingsView: View {
 
     var body: some View {
         NavigationView {
+            #if os(tvOS)
+            VStack {
+                Text("Global settings are not available on tvOS.")
+                    .font(.title2)
+                    .padding()
+                Text("To adjust VM-specific settings, select a VM and edit its configuration.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .padding()
+            }
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Close") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+            #else
             IASKAppSettings()
                 .navigationTitle("Settings")
                 .navigationBarTitleDisplayMode(.inline)
@@ -40,7 +59,11 @@ struct UTMSettingsView: View {
                         }
                     }
                 }
+            #endif
         }
+        #if os(tvOS)
+        .frame(width: 1200, height: 900)
+        #endif
     }
 }
 

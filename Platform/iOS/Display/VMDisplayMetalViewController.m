@@ -60,13 +60,17 @@ static const NSInteger kResizeTimeoutSecs = 5;
     [self.view insertSubview:self.keyboardView atIndex:0];
     [self.view insertSubview:self.mtkView atIndex:1];
     [self.mtkView bindFrameToSuperviewBounds];
+#if !TARGET_OS_TV
     [self loadInputAccessory];
+#endif
 }
 
+#if !TARGET_OS_TV
 - (void)loadInputAccessory {
     UINib *nib = [UINib nibWithNibName:@"VMDisplayMetalViewInputAccessory" bundle:nil];
     [nib instantiateWithOwner:self options:nil];
 }
+#endif
 
 - (BOOL)serverModeCursor {
     return self.vmInput.serverModeCursor;
@@ -75,8 +79,10 @@ static const NSInteger kResizeTimeoutSecs = 5;
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+#if !TARGET_OS_TV
     // set up software keyboard
     self.keyboardView.inputAccessoryView = self.inputAccessoryView;
+#endif
     
     // Set the view to use the default device
     self.mtkView.frame = self.view.bounds;
@@ -107,7 +113,7 @@ static const NSInteger kResizeTimeoutSecs = 5;
             [self initPointerInteraction];
         }
     }
-#if !defined(TARGET_OS_VISION) || !TARGET_OS_VISION
+#if (!defined(TARGET_OS_VISION) || !TARGET_OS_VISION) && (!defined(TARGET_OS_TV) || !TARGET_OS_TV)
     // Apple Pencil 2 double tap support on iOS 12.1+
     if (@available(iOS 12.1, *)) {
         [self initPencilInteraction];
@@ -126,6 +132,9 @@ static const NSInteger kResizeTimeoutSecs = 5;
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
+#if TARGET_OS_TV
+    [self resignFirstResponder];
+#endif
 #if !TARGET_OS_VISION
     [self stopGCMouse];
 #endif
@@ -135,6 +144,9 @@ static const NSInteger kResizeTimeoutSecs = 5;
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
+#if TARGET_OS_TV
+    [self becomeFirstResponder];
+#endif
     self.delegate.displayViewSize = [self convertSizeToNative:self.view.bounds.size];
     [self addObserver:self forKeyPath:@"vmDisplay.displaySize" options:(NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial) context:nil];
     if ([self integerForSetting:@"QEMURendererFPSLimit"] > 0) {
@@ -150,6 +162,10 @@ static const NSInteger kResizeTimeoutSecs = 5;
         }
    }
 #endif
+}
+
+- (BOOL)canBecomeFirstResponder {
+    return YES;
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {

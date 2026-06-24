@@ -39,7 +39,7 @@ struct UTMAppleConfigurationSystem: Codable {
     var cpuCount: Int = 0
     
     /// The RAM of the guest in MiB.
-    var memorySize: Int = 4096
+    var memorySize: Int = 512
     
     var boot: UTMAppleConfigurationBoot = try! .init(for: .none)
     

@@ -32,6 +32,12 @@ struct BigButtonStyle: ButtonStyle {
         let foregroundColor = Color(NSColor.controlTextColor)
         let foregroundDisabledColor = Color(NSColor.disabledControlTextColor)
         let foregroundPressedColor = Color(NSColor.selectedControlTextColor)
+        #elseif os(tvOS)
+        let defaultColor = Color(UIColor.systemGray)
+        let pressedColor = Color(UIColor.darkGray)
+        let foregroundColor = Color(UIColor.label)
+        let foregroundDisabledColor = Color(UIColor.systemGray)
+        let foregroundPressedColor = Color(UIColor.secondaryLabel)
         #else
         let defaultColor = Color(UIColor.tertiarySystemFill)
         let pressedColor = Color(UIColor.systemFill)

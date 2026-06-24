@@ -58,11 +58,11 @@ class Main {
         #endif
         // do patches
         UTMPatches.patchAll()
-        #if os(iOS) || os(visionOS)
+        #if os(iOS) || os(visionOS) || os(tvOS)
         // register defaults
         registerDefaultsFromSettingsBundle()
         // register tips
-        if #available(iOS 17, macOS 14, *) {
+        if #available(iOS 17, macOS 14, tvOS 17, *) {
             try? Tips.configure()
         }
         #endif

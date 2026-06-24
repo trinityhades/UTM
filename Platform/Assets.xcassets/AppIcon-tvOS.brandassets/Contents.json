@@ -1,0 +1,18 @@
+{
+  "assets" : [
+    {
+      "idiom" : "tv",
+      "filename" : "App Icon.imagestack",
+      "role" : "primary-app-icon"
+    },
+    {
+      "idiom" : "tv",
+      "filename" : "Top Shelf Image.imageset",
+      "role" : "top-shelf-image"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

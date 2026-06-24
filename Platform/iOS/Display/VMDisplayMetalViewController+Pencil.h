@@ -17,6 +17,9 @@
 #import "UIKit/UIKit.h"
 #import "VMDisplayMetalViewController.h"
 
+#import <TargetConditionals.h>
+#if !TARGET_OS_TV
+
 NS_ASSUME_NONNULL_BEGIN
 
 NS_AVAILABLE_IOS(12.1)
@@ -30,3 +33,5 @@ NS_AVAILABLE_IOS(12.1)
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif

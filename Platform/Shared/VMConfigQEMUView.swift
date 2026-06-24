@@ -116,7 +116,11 @@ struct VMConfigQEMUView: View {
                 #else
                 additionalArguments
                 #endif
-            }.navigationBarItems(trailing: EditButton())
+            }.navigationBarItems(trailing: Group {
+                #if !os(tvOS)
+                EditButton()
+                #endif
+            })
             .disableAutocorrection(true)
         }
     }

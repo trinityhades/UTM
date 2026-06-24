@@ -16,6 +16,7 @@
 
 import SwiftUI
 
+#if WITH_USB
 struct VMToolbarUSBMenuView: View {
     @EnvironmentObject private var session: VMSessionState
     
@@ -64,3 +65,4 @@ struct VMToolbarUSBMenuView_Previews: PreviewProvider {
         VMToolbarUSBMenuView()
     }
 }
+#endif

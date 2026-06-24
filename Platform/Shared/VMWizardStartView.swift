@@ -21,6 +21,7 @@ import Virtualization
 
 struct VMWizardStartView: View {
     @ObservedObject var wizardState: VMWizardState
+    @EnvironmentObject private var data: UTMData
     
     var isVirtualizationSupported: Bool {
         #if os(macOS)
@@ -114,6 +115,17 @@ struct VMWizardStartView: View {
                 #if os(macOS)
                 .buttonStyle(.link)
                 #endif
+                #if os(tvOS)
+                Button {
+                    data.alertItem = .message("To download prebuilt VMs, visit this URL on another device:\nhttps://mac.getutm.app/gallery/")
+                } label: {
+                    Label {
+                        Text("Download prebuilt from UTM Gallery…")
+                    } icon: {
+                        Image(systemName: "arrow.down.doc")
+                    }
+                }
+                #else
                 Link(destination: URL(string: "https://mac.getutm.app/gallery/")!) {
                     Label {
                         Text("Download prebuilt from UTM Gallery…")
@@ -121,6 +133,7 @@ struct VMWizardStartView: View {
                         Image(systemName: "arrow.down.doc")
                     }
                 }
+                #endif
             } header: {
                 Text("Existing")
             }

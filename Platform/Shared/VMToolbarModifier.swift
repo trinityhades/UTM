@@ -31,7 +31,11 @@ struct VMToolbarModifier: ViewModifier {
     #else
     var buttonPlacement: ToolbarItemPlacement {
         if bottom {
+            #if os(tvOS)
+            return .automatic
+            #else
             return .bottomBar
+            #endif
         } else {
             return .navigationBarTrailing
         }

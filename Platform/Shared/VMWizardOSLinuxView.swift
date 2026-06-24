@@ -62,11 +62,17 @@ struct VMWizardOSLinuxView: View {
                 if wizardState.useAppleVirtualization {
                     Link(destination: URL(string: "https://docs.getutm.app/guides/debian/")!) {
                         Label("Debian Install Guide", systemImage: "link")
-                    }.buttonStyle(.borderless)
+                    }
+                    #if !os(tvOS)
+                    .buttonStyle(.borderless)
+                    #endif
                 } else {
                     Link(destination: URL(string: "https://docs.getutm.app/guides/ubuntu/")!) {
                         Label("Ubuntu Install Guide", systemImage: "link")
-                    }.buttonStyle(.borderless)
+                    }
+                    #if !os(tvOS)
+                    .buttonStyle(.borderless)
+                    #endif
                 }
             }
             
@@ -76,7 +82,10 @@ struct VMWizardOSLinuxView: View {
                     Toggle("Enable Rosetta (x86_64 Emulation)", isOn: $wizardState.linuxHasRosetta)
                     Link(destination: URL(string: "https://docs.getutm.app/advanced/rosetta/")!) {
                         Label("Installation Instructions", systemImage: "link")
-                    }.buttonStyle(.borderless)
+                    }
+                    #if !os(tvOS)
+                    .buttonStyle(.borderless)
+                    #endif
                 } header: {
                     Text("Additional Options")
                 }
@@ -149,7 +158,9 @@ struct VMWizardOSLinuxView: View {
             
             
         }
+        #if !os(tvOS)
         .fileImporter(isPresented: $isFileImporterPresented, allowedContentTypes: [.data], onCompletion: processImage)
+        #endif
     }
     
     private func processImage(_ result: Result<URL, Error>) {

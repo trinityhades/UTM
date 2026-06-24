@@ -248,8 +248,13 @@ extension VMSessionState: UTMSpiceIODelegate {
                 return
             }
             let device = VMWindowState.Device.serial(serial, id)
-            assert(id < qemuConfig.serials.count)
-            assert(qemuConfig.serials[id].mode == .builtin && qemuConfig.serials[id].terminal != nil)
+            guard id < qemuConfig.serials.count else {
+                logger.error("serial config index \(id) out of range (count=\(qemuConfig.serials.count))")
+                return
+            }
+            if qemuConfig.serials[id].mode != .builtin || qemuConfig.serials[id].terminal == nil {
+                logger.warning("serial \(id) has unexpected mode (\(qemuConfig.serials[id].mode.prettyValue)) or nil terminal config, using defaults")
+            }
             devices.append(device)
             // associate with the next available window
             for window in windows {
@@ -433,9 +438,19 @@ extension VMSessionState {
         let audioSession = AVAudioSession.sharedInstance()
         do {
             let preferDeviceMicrophone = UserDefaults.standard.bool(forKey: "PreferDeviceMicrophone")
+            #if os(tvOS)
+            var options: AVAudioSession.CategoryOptions = [.mixWithOthers, .allowBluetoothA2DP, .allowAirPlay]
+            #else
             var options: AVAudioSession.CategoryOptions = [.mixWithOthers, .defaultToSpeaker, .allowBluetoothA2DP, .allowAirPlay]
+            #endif
             if !preferDeviceMicrophone {
+                #if !os(tvOS)
                 options.insert(.allowBluetooth)
+                #else
+                if #available(tvOS 17, *) {
+                    options.insert(.allowBluetooth)
+                }
+                #endif
             }
             try audioSession.setCategory(.playAndRecord, options: options)
             try audioSession.setActive(true)
@@ -597,8 +612,10 @@ extension VMSessionState {
 
     private func showBackgroundExpireNotification() {
         let content = UNMutableNotificationContent()
+        #if !os(tvOS)
         content.title = NSLocalizedString("Background task is about to expire", comment: "VMSessionState")
         content.body = NSLocalizedString("Switch back to UTM to avoid termination.", comment: "VMSessionState")
+        #endif
         if #available(iOS 15, *) {
             content.interruptionLevel = .timeSensitive
         }
@@ -607,7 +624,9 @@ extension VMSessionState {
     }
 
     private func hideBackgroundExpireNotification() {
+        #if !os(tvOS)
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["BACKGROUND"])
+        #endif
     }
 }
 

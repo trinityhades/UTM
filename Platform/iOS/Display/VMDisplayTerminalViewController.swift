@@ -122,8 +122,13 @@ extension VMDisplayTerminalViewController {
             terminalView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: additionalTopPadding).isActive = true
             terminalView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor).isActive = true
             terminalView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
+            #if os(tvOS)
+            terminalView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+            #else
             terminalView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -inputAccessoryHeight).isActive = true
+            #endif
         } else {
+            #if !os(tvOS)
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(keyboardWillShow),
@@ -134,16 +139,20 @@ extension VMDisplayTerminalViewController {
                 selector: #selector(keyboardWillHide),
                 name: UIWindow.keyboardWillHideNotification,
                 object: nil)
+            #endif
         }
     }
     
     func cleanupKeyboardMonitor() {
+        #if !os(tvOS)
         if #unavailable(iOS 15) {
             NotificationCenter.default.removeObserver(self, name: UIWindow.keyboardWillShowNotification, object: nil)
             NotificationCenter.default.removeObserver(self, name: UIWindow.keyboardWillHideNotification, object: nil)
         }
+        #endif
     }
     
+    #if !os(tvOS)
     @objc private func keyboardWillShow(_ notification: NSNotification) {
         guard let keyboardValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else { return }
         
@@ -158,6 +167,7 @@ extension VMDisplayTerminalViewController {
         keyboardDelta = 0
         terminalView.frame = makeFrame(keyboardDelta: 0)
     }
+    #endif
 }
 
 // MARK: - Style terminal
@@ -220,9 +230,11 @@ extension VMDisplayTerminalViewController: TerminalViewDelegate {
     }
     
     func clipboardCopy(source: TerminalView, content: Data) {
+        #if !os(tvOS)
         if let str = String(bytes: content, encoding: .utf8) {
             UIPasteboard.general.string = str
         }
+        #endif
     }
 }
 
