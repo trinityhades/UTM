@@ -155,11 +155,8 @@ extension VMWindowState {
         }
     }
 
-    mutating func switchToNextDisplay(in session: VMSessionState?) {
-        guard let session else {
-            return
-        }
-        let displays = session.devices.filter {
+    mutating func switchToNextDisplay(from devices: [Device]) {
+        let displays = devices.filter {
             if case .display(_, _) = $0 {
                 return true
             } else {

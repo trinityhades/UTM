@@ -4952,6 +4952,7 @@
 					"$(PROJECT_DIR)/$(QUOTED_SYSROOT_DIR)/include/spice-1",
 					"$(PROJECT_DIR)/$(QUOTED_SYSROOT_DIR)/include/libusb-1.0",
 				);
+				INFOPLIST_KEY_GCSupportsGameMode = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/$(QUOTED_SYSROOT_DIR)/lib",
@@ -5039,6 +5040,7 @@
 					"$(PROJECT_DIR)/$(QUOTED_SYSROOT_DIR)/include/spice-1",
 					"$(PROJECT_DIR)/$(QUOTED_SYSROOT_DIR)/include/libusb-1.0",
 				);
+				INFOPLIST_KEY_GCSupportsGameMode = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/$(QUOTED_SYSROOT_DIR)/lib",

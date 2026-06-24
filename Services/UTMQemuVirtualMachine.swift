@@ -263,8 +263,8 @@ extension UTMQemuVirtualMachine {
         if !FileManager.default.fileExists(atPath: efiVarsURL.path) {
             config.qemu.isUefiVariableResetRequested = true
             config.qemu.hasPreloadedSecureBootKeys = config.qemu.hasTPMDevice
-            _ = try await config.qemu.saveData(to: efiVarsURL.deletingLastPathComponent(), for: config.system)
         }
+        _ = try await config.qemu.saveData(to: efiVarsURL.deletingLastPathComponent(), for: config.system)
     }
     
     private func determineSnapshotSupport() async -> Error? {

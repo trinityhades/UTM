@@ -20,6 +20,7 @@ import SwiftUI
 struct VMDisplayHostedView: UIViewControllerRepresentable {
     internal class Coordinator: VMDisplayViewControllerDelegate {
         let vm: any UTMSpiceVirtualMachine
+        let session: VMSessionState
         let device: VMWindowState.Device
         @Binding var state: VMWindowState
         var vmStateCancellable: AnyCancellable?
@@ -110,8 +111,9 @@ struct VMDisplayHostedView: UIViewControllerRepresentable {
             }
         }
 
-        init(with vm: any UTMSpiceVirtualMachine, device: VMWindowState.Device, state: Binding<VMWindowState>) {
+        init(with vm: any UTMSpiceVirtualMachine, session: VMSessionState, device: VMWindowState.Device, state: Binding<VMWindowState>) {
             self.vm = vm
+            self.session = session
             self.device = device
             self._state = state
         }
@@ -141,13 +143,11 @@ struct VMDisplayHostedView: UIViewControllerRepresentable {
         }
         
         func displayRequestExit() {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 if self.state.isRunning {
                     self.state.alert = .powerDown
                 } else {
-                    if let session = VMSessionState.allActiveSessions.values.first(where: { $0.vm.id == self.vm.id }) {
-                        session.stop()
-                    }
+                    self.session.stop()
                 }
             }
         }
@@ -162,7 +162,9 @@ struct VMDisplayHostedView: UIViewControllerRepresentable {
         }
 
         func displayRequestSwitchDisplay() {
-            state.switchToNextDisplay(in: VMSessionState.allActiveSessions.values.first { $0.vm.id == vm.id })
+            Task { @MainActor in
+                self.state.switchToNextDisplay(from: self.session.devices)
+            }
         }
     }
     
@@ -244,6 +246,6 @@ struct VMDisplayHostedView: UIViewControllerRepresentable {
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(with: vm, device: device, state: $state)
+        Coordinator(with: vm, session: session, device: device, state: $state)
     }
 }

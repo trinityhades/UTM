@@ -28,18 +28,42 @@
                                                       modifierFlags:UIKeyModifierCommand | UIKeyModifierControl
                                                              action:@selector(keyCommandSwitchDisplay:)
                                                discoverabilityTitle:NSLocalizedString(@"Switch Display", comment: "VMDisplayMetalViewController")];
+    UIKeyCommand *toolbarLeft = [UIKeyCommand keyCommandWithInput:UIKeyInputLeftArrow
+                                                    modifierFlags:0
+                                                           action:@selector(keyCommandToolbarLeft:)
+                                             discoverabilityTitle:NSLocalizedString(@"Toolbar Left", comment: "VMDisplayMetalViewController")];
+    UIKeyCommand *toolbarRight = [UIKeyCommand keyCommandWithInput:UIKeyInputRightArrow
+                                                     modifierFlags:0
+                                                            action:@selector(keyCommandToolbarRight:)
+                                              discoverabilityTitle:NSLocalizedString(@"Toolbar Right", comment: "VMDisplayMetalViewController")];
     NSArray<UIKeyCommand *> *superCommands = [super keyCommands];
+    NSArray<UIKeyCommand *> *commands = @[ switchDisplay, toolbarLeft, toolbarRight ];
     if (superCommands) {
-        return [superCommands arrayByAddingObject:switchDisplay];
+        return [superCommands arrayByAddingObjectsFromArray:commands];
     } else {
-        return @[switchDisplay];
+        return commands;
     }
 }
 
 - (void)keyCommandSwitchDisplay:(UIKeyCommand *)sender {
-    if ([self.delegate respondsToSelector:@selector(displayRequestSwitchDisplay)]) {
+    if ([(id)self.delegate respondsToSelector:@selector(displayRequestSwitchDisplay)]) {
         [self.delegate displayRequestSwitchDisplay];
     }
+}
+
+- (void)setToolbarCollapsedForLeftDirection:(BOOL)isLeft {
+    NSInteger location = [[NSUserDefaults standardUserDefaults] integerForKey:@"ToolbarLocation"];
+    BOOL isToolbarOnLeft = location == 2 || location == 3;
+    BOOL shouldCollapse = isLeft ? isToolbarOnLeft : !isToolbarOnLeft;
+    [[NSUserDefaults standardUserDefaults] setBool:shouldCollapse forKey:@"ToolbarIsCollapsed"];
+}
+
+- (void)keyCommandToolbarLeft:(UIKeyCommand *)sender {
+    [self setToolbarCollapsedForLeftDirection:YES];
+}
+
+- (void)keyCommandToolbarRight:(UIKeyCommand *)sender {
+    [self setToolbarCollapsedForLeftDirection:NO];
 }
 
 #pragma mark - Software Keyboard

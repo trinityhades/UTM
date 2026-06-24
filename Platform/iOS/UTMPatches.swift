@@ -134,6 +134,21 @@ extension UIWindow {
             objc_getAssociatedObject(self, &IndirectPointerTouchIgnoredViewHandle) as? UIView
         }
     }
+
+    private func shouldDeliverIndirectPointerTouch(to view: UIView?) -> Bool {
+        var current = view
+        while let view = current, view !== self {
+            if view is UIControl {
+                return true
+            }
+            let className = NSStringFromClass(type(of: view))
+            if className.contains("Button") || className.contains("Menu") || className.contains("Control") {
+                return true
+            }
+            current = view.superview
+        }
+        return false
+    }
     
     /// Replacement `sendEvent(_:)` function
     /// - Parameter event: The event to dispatch.
@@ -141,9 +156,14 @@ extension UIWindow {
         if isIndirectPointerTouchIgnored && event.type == .touches {
             event.touches(for: self)?.forEach { touch in
                 if touch.type == .indirectPointer {
+                    let isToolbarCollapsed = UserDefaults.standard.bool(forKey: "ToolbarIsCollapsed")
+                    if !isToolbarCollapsed {
+                        return
+                    }
                     if let ignoredView = indirectPointerTouchIgnoredView {
                         let location = touch.location(in: self)
-                        guard hitTest(location, with: event)?.isDescendant(of: ignoredView) ?? false else {
+                        let hitView = hitTest(location, with: event)
+                        guard hitView?.isDescendant(of: ignoredView) ?? false || !shouldDeliverIndirectPointerTouch(to: hitView) else {
                             return
                         }
                     }

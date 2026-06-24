@@ -184,29 +184,66 @@ extension UTMQemuConfigurationQEMU {
 // MARK: - Saving data
 
 extension UTMQemuConfigurationQEMU {
+    private static func qemuResourceURL() throws -> URL {
+        guard let resourceURL = Bundle.main.url(forResource: "qemu", withExtension: nil) else {
+            throw UTMQemuConfigurationError.qemuResourcesNotFound
+        }
+        return resourceURL
+    }
+
+    private static func efiCodeURL(for system: UTMQemuConfigurationSystem, secure: Bool) throws -> URL {
+        guard let prefix = Self.uefiImagePrefix(forArchitecture: system.architecture) else {
+            throw UTMQemuConfigurationError.uefiNotSupported
+        }
+        let secureSuffix = secure ? "-secure" : ""
+        return try qemuResourceURL().appendingPathComponent("\(prefix)\(secureSuffix)-code.fd")
+    }
+
+    private static func efiTemplateVarsURL(for system: UTMQemuConfigurationSystem, secure: Bool) throws -> URL {
+        guard let prefix = Self.uefiImagePrefix(forArchitecture: system.architecture, isVars: true) else {
+            throw UTMQemuConfigurationError.uefiNotSupported
+        }
+        let secureSuffix = secure ? "-secure" : ""
+        return try qemuResourceURL().appendingPathComponent("\(prefix)\(secureSuffix)-vars.fd")
+    }
+
+    private static func efiFlashSize(for system: UTMQemuConfigurationSystem, secure: Bool) throws -> UInt64 {
+        let resourceValues = try efiCodeURL(for: system, secure: secure).resourceValues(forKeys: [.fileSizeKey])
+        guard let fileSize = resourceValues.fileSize else {
+            throw UTMQemuConfigurationError.qemuResourcesNotFound
+        }
+        return UInt64(fileSize)
+    }
+
     @MainActor mutating func saveData(to dataURL: URL, for system: UTMQemuConfigurationSystem) async throws -> [URL] {
         var existing: [URL] = []
         if hasUefiBoot {
             let fileManager = FileManager.default
-            // save EFI variables
-            guard let resourceURL = Bundle.main.url(forResource: "qemu", withExtension: nil) else {
-                throw UTMQemuConfigurationError.qemuResourcesNotFound
-            }
-            let templateVarsURL: URL
-            let secure = hasPreloadedSecureBootKeys ? "-secure" : ""
-            if let prefix = Self.uefiImagePrefix(forArchitecture: system.architecture, isVars: true) {
-                templateVarsURL = resourceURL.appendingPathComponent("\(prefix)\(secure)-vars.fd")
-            } else {
-                throw UTMQemuConfigurationError.uefiNotSupported
-            }
+            let useSecureVars = hasPreloadedSecureBootKeys
+            let templateVarsURL = try Self.efiTemplateVarsURL(for: system, secure: useSecureVars)
+            let expectedSize = try Self.efiFlashSize(for: system, secure: useSecureVars)
             let varsURL = dataURL.appendingPathComponent(QEMUPackageFileName.efiVariables.rawValue)
             let isExisting = fileManager.fileExists(atPath: varsURL.path)
-            if !isExisting || isUefiVariableResetRequested {
+            let existingSize = try? varsURL.resourceValues(forKeys: [.fileSizeKey]).fileSize
+            let needsResize = existingSize.map { UInt64($0) != expectedSize } ?? false
+            if !isExisting || isUefiVariableResetRequested || needsResize {
                 try await Task.detached {
                     if isExisting {
-                        try FileManager.default.removeItem(at: varsURL)
+                        if isUefiVariableResetRequested {
+                            try FileManager.default.removeItem(at: varsURL)
+                        } else {
+                            let handle = try FileHandle(forWritingTo: varsURL)
+                            defer { try? handle.close() }
+                            try handle.truncate(atOffset: expectedSize)
+                            let permissions: FilePermissions = [.ownerReadWrite, .groupRead, .otherRead]
+                            try FileManager.default.setAttributes([.posixPermissions: permissions.rawValue], ofItemAtPath: varsURL.path)
+                            return
+                        }
                     }
                     try FileManager.default.copyItem(at: templateVarsURL, to: varsURL)
+                    let handle = try FileHandle(forWritingTo: varsURL)
+                    defer { try? handle.close() }
+                    try handle.truncate(atOffset: expectedSize)
                     let permissions: FilePermissions = [.ownerReadWrite, .groupRead, .otherRead]
                     try FileManager.default.setAttributes([.posixPermissions: permissions.rawValue], ofItemAtPath: varsURL.path)
                 }.value
