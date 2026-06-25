@@ -46,6 +46,10 @@
 #endif
 }
 
+- (UIResponder *)preferredPressResponder {
+    return self.view;
+}
+
 - (void)showKeyboard {
     [self.view.window makeKeyWindow];
 }

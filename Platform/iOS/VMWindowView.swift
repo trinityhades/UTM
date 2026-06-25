@@ -113,7 +113,13 @@ struct VMWindowView: View {
             .ignoresSafeArea()
             #if !os(visionOS)
             if isInteractive && state.isRunning {
+                #if os(tvOS)
+                if !isCollapsed {
+                    VMToolbarView(state: $state)
+                }
+                #else
                 VMToolbarView(state: $state)
+                #endif
             }
             #endif
         }

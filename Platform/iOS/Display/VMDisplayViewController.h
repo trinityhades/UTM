@@ -28,6 +28,8 @@
 @property (nonatomic, readwrite) BOOL prefersHomeIndicatorAutoHidden;
 @property (nonatomic, readwrite) BOOL prefersPointerLocked;
 
+@property (nonatomic, readonly) UIResponder *preferredPressResponder;
+
 - (void)showKeyboard;
 - (void)hideKeyboard;
 

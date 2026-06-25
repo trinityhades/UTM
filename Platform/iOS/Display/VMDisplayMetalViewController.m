@@ -44,6 +44,10 @@ static const NSInteger kResizeTimeoutSecs = 5;
 
 @synthesize renderer;
 
+- (UIResponder *)preferredPressResponder {
+    return self.mtkView;
+}
+
 - (instancetype)initWithDisplay:(CSDisplay *)display input:(CSInput *)input {
     if (self = [super initWithNibName:nil bundle:nil]) {
         self.vmDisplay = display;

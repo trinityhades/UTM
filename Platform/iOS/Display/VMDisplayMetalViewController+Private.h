@@ -42,6 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) BOOL pencilForceRightClickOnce;
 @property (nonatomic, nullable) VMCursor *cursor;
 @property (nonatomic, nullable) VMScroll *scroll;
+@property (nonatomic) BOOL isOpeningToolbar;
 
 // Gestures
 @property (nonatomic, nullable) UISwipeGestureRecognizer *swipeUp;

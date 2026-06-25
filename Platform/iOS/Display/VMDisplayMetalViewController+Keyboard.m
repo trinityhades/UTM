@@ -219,11 +219,41 @@ static int API_AVAILABLE(ios(13.4)) hidToPs2(UIKeyboardHIDUsage hidCode) {
 
 - (void)pressesBegan:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
     BOOL didHandleEvent = NO;
+    BOOL isCollapsed = [[NSUserDefaults standardUserDefaults] boolForKey:@"ToolbarIsCollapsed"];
     for (UIPress *press in presses) {
-        int code = hidToPs2(press.key.keyCode);
-        if (code) {
-            [self sendExtendedKey:kCSInputKeyPress code:code];
-            didHandleEvent = YES;
+        if (isCollapsed) {
+            NSInteger location = [[NSUserDefaults standardUserDefaults] integerForKey:@"ToolbarLocation"];
+            BOOL isToolbarOnLeft = location == 2 || location == 3;
+            if (!isToolbarOnLeft) {
+#if TARGET_OS_TV
+                if (press.type == UIPressTypeRightArrow || (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardRightArrow)) {
+#else
+                if (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardRightArrow) {
+#endif
+                    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"ToolbarIsCollapsed"];
+                    self.isOpeningToolbar = YES;
+                    didHandleEvent = YES;
+                    continue;
+                }
+            } else {
+#if TARGET_OS_TV
+                if (press.type == UIPressTypeLeftArrow || (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardLeftArrow)) {
+#else
+                if (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardLeftArrow) {
+#endif
+                    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"ToolbarIsCollapsed"];
+                    self.isOpeningToolbar = YES;
+                    didHandleEvent = YES;
+                    continue;
+                }
+            }
+        }
+        if (press.key) {
+            int code = hidToPs2(press.key.keyCode);
+            if (code) {
+                [self sendExtendedKey:kCSInputKeyPress code:code];
+                didHandleEvent = YES;
+            }
         }
     }
     if (!didHandleEvent) {
@@ -234,10 +264,37 @@ static int API_AVAILABLE(ios(13.4)) hidToPs2(UIKeyboardHIDUsage hidCode) {
 - (void)pressesEnded:(NSSet<UIPress *> *)presses withEvent:(UIPressesEvent *)event {
     BOOL didHandleEvent = NO;
     for (UIPress *press in presses) {
-        int code = hidToPs2(press.key.keyCode);
-        if (code) {
-            [self sendExtendedKey:kCSInputKeyRelease code:code];
-            didHandleEvent = YES;
+        if (self.isOpeningToolbar) {
+            NSInteger location = [[NSUserDefaults standardUserDefaults] integerForKey:@"ToolbarLocation"];
+            BOOL isToolbarOnLeft = location == 2 || location == 3;
+            if (!isToolbarOnLeft) {
+#if TARGET_OS_TV
+                if (press.type == UIPressTypeRightArrow || (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardRightArrow)) {
+#else
+                if (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardRightArrow) {
+#endif
+                    self.isOpeningToolbar = NO;
+                    didHandleEvent = YES;
+                    continue;
+                }
+            } else {
+#if TARGET_OS_TV
+                if (press.type == UIPressTypeLeftArrow || (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardLeftArrow)) {
+#else
+                if (press.key && press.key.keyCode == UIKeyboardHIDUsageKeyboardLeftArrow) {
+#endif
+                    self.isOpeningToolbar = NO;
+                    didHandleEvent = YES;
+                    continue;
+                }
+            }
+        }
+        if (press.key) {
+            int code = hidToPs2(press.key.keyCode);
+            if (code) {
+                [self sendExtendedKey:kCSInputKeyRelease code:code];
+                didHandleEvent = YES;
+            }
         }
         [self resetModifierToggles];
     }

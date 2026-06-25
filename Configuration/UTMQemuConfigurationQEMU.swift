@@ -226,10 +226,11 @@ extension UTMQemuConfigurationQEMU {
             let isExisting = fileManager.fileExists(atPath: varsURL.path)
             let existingSize = try? varsURL.resourceValues(forKeys: [.fileSizeKey]).fileSize
             let needsResize = existingSize.map { UInt64($0) != expectedSize } ?? false
-            if !isExisting || isUefiVariableResetRequested || needsResize {
-                try await Task.detached {
+            let resetRequested = isUefiVariableResetRequested
+            if !isExisting || resetRequested || needsResize {
+                try await Task.detached(priority: nil) {
                     if isExisting {
-                        if isUefiVariableResetRequested {
+                        if resetRequested {
                             try FileManager.default.removeItem(at: varsURL)
                         } else {
                             let handle = try FileHandle(forWritingTo: varsURL)
@@ -247,6 +248,7 @@ extension UTMQemuConfigurationQEMU {
                     let permissions: FilePermissions = [.ownerReadWrite, .groupRead, .otherRead]
                     try FileManager.default.setAttributes([.posixPermissions: permissions.rawValue], ofItemAtPath: varsURL.path)
                 }.value
+                // Update flags on self after the detached work completes
                 isUefiVariableResetRequested = false
                 hasPreloadedSecureBootKeys = false
             }

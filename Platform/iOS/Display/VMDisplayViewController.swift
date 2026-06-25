@@ -60,7 +60,7 @@ public extension VMDisplayViewController {
             updatePressResponderOverride()
             NotificationCenter.default.addObserver(self, selector: #selector(userDefaultsDidChange), name: UserDefaults.didChangeNotification, object: nil)
             #else
-            UIPress.pressResponderOverride = self
+            UIPress.pressResponderOverride = preferredPressResponder
             #endif
         }
         #if !os(visionOS) && WITH_LOCATION_BACKGROUND
@@ -132,8 +132,8 @@ public extension VMDisplayViewController {
 
     private func updatePressResponderOverride() {
         if UserDefaults.standard.bool(forKey: "ToolbarIsCollapsed") {
-            UIPress.pressResponderOverride = self
-        } else if UIPress.pressResponderOverride === self {
+            UIPress.pressResponderOverride = preferredPressResponder
+        } else if UIPress.pressResponderOverride === preferredPressResponder {
             UIPress.pressResponderOverride = nil
         }
     }

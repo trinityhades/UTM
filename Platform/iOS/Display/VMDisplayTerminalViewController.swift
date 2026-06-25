@@ -20,6 +20,9 @@ import SwiftUI
 
 @objc class VMDisplayTerminalViewController: VMDisplayViewController {
     private var terminalView: TerminalView!
+    override var preferredPressResponder: UIResponder {
+        terminalView
+    }
     var vmSerialPort: CSPort {
         willSet {
             vmSerialPort.delegate = nil

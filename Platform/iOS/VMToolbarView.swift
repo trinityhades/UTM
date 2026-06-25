@@ -178,6 +178,7 @@ struct VMToolbarView: View {
             } label: {
                 Label("Hide", systemImage: isCollapsed ? nameOfHideIcon : nameOfShowIcon)
             }.toolbarButtonStyle(horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass)
+            .focusableIfAvailable(!isCollapsed)
             .animationUniqueID("hide", in: namespace)
             .modifier(HideToolbarTipModifier(isCollapsed: $isCollapsed))
             .opacity(toolbarToggleOpacity)
@@ -423,6 +424,15 @@ private extension View {
     func controlSize(forHorizontalSizeClass horizontalSizeClass: UserInterfaceSizeClass?) -> some View {
         if horizontalSizeClass == .regular {
             self.controlSize(.large)
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func focusableIfAvailable(_ isFocusable: Bool) -> some View {
+        if #available(iOS 17, tvOS 17, *) {
+            self.focusable(isFocusable)
         } else {
             self
         }
